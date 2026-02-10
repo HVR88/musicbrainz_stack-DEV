@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+set -e -u
+
+# shellcheck source=admin/lib/common.inc.bash
+source "$(dirname "${BASH_SOURCE[0]}")/lib/common.inc.bash"
+
+admin/first-run
+admin/validate-env
+
+${DOCKER_COMPOSE_CMD} config >/dev/null
+
+echo "OK: preflight checks passed."

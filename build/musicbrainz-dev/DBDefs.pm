@@ -148,6 +148,8 @@ sub REPLICATION_TYPE { $ENV{MUSICBRAINZ_STANDALONE_SERVER} == 1
 # NOTE: DO NOT EXPOSE THIS ACCESS TOKEN PUBLICLY!
 #
 sub REPLICATION_ACCESS_TOKEN {
+    my $env = $ENV{MUSICBRAINZ_REPLICATION_TOKEN} // '';
+    return $env if length $env;
     my $file = '/run/secrets/metabrainz_access_token';
     open(my $fh, '<', $file) or return '';
     read($fh, my $token, 40) or $token = '';

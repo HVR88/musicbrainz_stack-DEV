@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+set -e -u
+
+# shellcheck source=admin/lib/common.inc.bash
+source "$(dirname "${BASH_SOURCE[0]}")/lib/common.inc.bash"
+
+ENV_FILE="$MB_DOCKER_ROOT/.env"
+EXAMPLE_FILE="$MB_DOCKER_ROOT/local/.env.example"
+
+if [ -f "$ENV_FILE" ]; then
+  echo ".env already exists."
+  exit 0
+fi
+
+if [ -f "$EXAMPLE_FILE" ]; then
+  cp "$EXAMPLE_FILE" "$ENV_FILE"
+  echo "Created .env from local/.env.example"
+  exit 0
+fi
+
+echo >&2 "No .env and no local/.env.example found."
+exit 1
+
+admin/validate-env

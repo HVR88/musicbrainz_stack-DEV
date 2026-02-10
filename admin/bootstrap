@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+set -e -u
+
+# shellcheck source=admin/lib/common.inc.bash
+source "$(dirname "${BASH_SOURCE[0]}")/lib/common.inc.bash"
+
+HELP=$(cat <<EOH
+Usage: $SCRIPT_NAME <command>
+
+Commands:
+  enable   Add the bootstrap compose override to COMPOSE_FILE
+  disable  Remove the bootstrap compose override from COMPOSE_FILE
+  reset    Clear bootstrap marker files (DB + search)
+  help     Show this help
+EOH
+)
+
+if [ $# -eq 0 ]; then
+  echo "$HELP"
+  exit 64
+fi
+
+case "$1" in
+  help|--help|-h)
+    echo "$HELP"
+    exit 0
+    ;;
+  enable)
+    admin/configure add bootstrap
+    ;;
+  disable)
+    admin/configure rm bootstrap
+    ;;
+  reset)
+    ${DOCKER_COMPOSE_CMD} run --rm -T -e MUSICBRAINZ_BOOTSTRAP_CLEAN_MARKERS=1 bootstrap
+    ${DOCKER_COMPOSE_CMD} run --rm -T -e MUSICBRAINZ_BOOTSTRAP_CLEAN_MARKERS=1 search-bootstrap
+    ;;
+  *)
+    echo >&2 "$SCRIPT_NAME: unknown command '$1'"
+    echo >&2 "Try '$SCRIPT_NAME help' for usage."
+    exit 64
+    ;;
+esac
