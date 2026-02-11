@@ -1,4 +1,0 @@
-# Description: Network override (default bridge)
-networks:
-  default:
-    driver: bridge
