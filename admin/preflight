@@ -7,6 +7,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib/common.inc.bash"
 
 admin/first-run
 admin/validate-env
+admin/render-network
 
 ${DOCKER_COMPOSE_CMD} config >/dev/null
 

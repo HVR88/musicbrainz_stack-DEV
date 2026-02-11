@@ -46,4 +46,14 @@ fi
 
 DOCKER_COMPOSE_CMD=${DOCKER_COMPOSE_CMD:-${DOCKER_CMD} compose}
 
+# Ensure network override exists when referenced by COMPOSE_FILE.
+NETWORK_OVERRIDE_FILE="$MB_DOCKER_ROOT/local/network.override.yml"
+if [ -z "${MB_SKIP_NETWORK_RENDER:-}" ] && [ -f "$MB_DOCKER_ROOT/.env" ]; then
+  if grep -q '^COMPOSE_FILE=' "$MB_DOCKER_ROOT/.env" \
+    && grep -q 'local/network.override.yml' "$MB_DOCKER_ROOT/.env" \
+    && [ ! -f "$NETWORK_OVERRIDE_FILE" ]; then
+    MB_SKIP_NETWORK_RENDER=1 admin/render-network >/dev/null
+  fi
+fi
+
 # vi: set et sts=2 sw=2 ts=2 :

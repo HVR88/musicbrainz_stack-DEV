@@ -15,7 +15,7 @@ fi
 
 if [ -f "$EXAMPLE_FILE" ]; then
   cp "$EXAMPLE_FILE" "$ENV_FILE"
-  echo "Created .env from local/.env.example"
+  echo "Created .env from .env.example"
   exit 0
 fi
 
