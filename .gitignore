@@ -9,8 +9,6 @@
 
 # Directory designated to store local compose overrides and related files
 /local/*
-!/local/README.md
-!/local/network.override.yml
 
 # Installed node module 'markdown-toc' used to generate TOC in README.md
 /node_modules/
