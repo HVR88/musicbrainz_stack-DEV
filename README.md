@@ -1,4 +1,8 @@
-# MusicBrainz Stack (DEV)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/HVR88/LM-Bridge-DEV/main/assets/lmbridge-icon.png" alt="LM Bridge" width="250" />
+</p>
+
+# MusicBrainz Mirror Server PLUS (MBMS DEV)
 
 This repo is a streamlined, automation-first wrapper around the official MusicBrainz Docker stack plus a custom Lidarr/MusicBrainz API bridge. It keeps the modern multi-service architecture (Postgres, Solr, SIR, RabbitMQ, Redis) but removes the multi-step manual setup by adding bootstrap and scheduling services.
 
@@ -12,6 +16,9 @@ This repo is a streamlined, automation-first wrapper around the official MusicBr
 - API Bridge betwallowing cached queries from Lidarr to MusicBrainz
 
 ## Quick start
+
+0. Get your Live Data Feed Access Token from Metabrainz first
+   https://metabrainz.org/profile
 
 1. Edit `.env` (included in this repo) to match your environment.
 
