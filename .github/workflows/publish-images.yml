@@ -145,11 +145,12 @@ jobs:
 
   publish-dockerhub:
     name: Publish to Docker Hub
-    if: ${{ secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN }}
+    if: ${{ secrets.DOCKERHUB_USERNAME && secrets.DOCKERHUB_TOKEN_MBMS }}
     runs-on: ubuntu-latest
     env:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      IMAGE_NAMESPACE: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/musicbrainz-docker
+      IMAGE_REGISTRY: docker.io
+      IMAGE_REPO_PREFIX: mbms-plus
     strategy:
       fail-fast: false
       matrix:
@@ -180,7 +181,7 @@ jobs:
         run: |
           set -e
           USER_LC=$(echo "$DOCKERHUB_USERNAME" | tr '[:upper:]' '[:lower:]')
-          echo "IMAGE_NAMESPACE=docker.io/${USER_LC}/musicbrainz-docker" >> "$GITHUB_ENV"
+          echo "IMAGE_NAMESPACE=${USER_LC}" >> "$GITHUB_ENV"
 
           source .env
 
@@ -214,7 +215,7 @@ jobs:
       - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          password: ${{ secrets.DOCKERHUB_TOKEN_MBMS }}
 
       - name: Compute tags and build args
         run: |
@@ -251,8 +252,8 @@ jobs:
               ;;
           esac
 
-          TAGS="$IMAGE_NAMESPACE/${{ matrix.name }}:$VERSION"
-          TAGS="$TAGS"$'\n'"$IMAGE_NAMESPACE/${{ matrix.name }}:sha-$SHORT_SHA"
+          TAGS="$IMAGE_REGISTRY/$IMAGE_NAMESPACE/${IMAGE_REPO_PREFIX}-${{ matrix.name }}:$VERSION"
+          TAGS="$TAGS"$'\n'"$IMAGE_REGISTRY/$IMAGE_NAMESPACE/${IMAGE_REPO_PREFIX}-${{ matrix.name }}:sha-$SHORT_SHA"
 
           printf "TAGS<<'EOF'\n%s\nEOF\n" "$TAGS" >> "$GITHUB_ENV"
           printf "BUILD_ARGS<<'EOF'\n%s\nEOF\n" "$BUILD_ARGS" >> "$GITHUB_ENV"
@@ -268,3 +269,109 @@ jobs:
           build-args: ${{ env.BUILD_ARGS }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  publish-deploy:
+    name: Publish Deploy Repo
+    if: ${{ secrets.MBMS_TOKEN }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load deploy vars
+      # shellcheck disable=SC1091
+        run: |
+          set -e
+          SIR_VERSION=$(sed -n 's/^ARG SIR_VERSION=//p' build/sir/Dockerfile)
+          RABBITMQ_VERSION=$(sed -n 's/^ARG RABBITMQ_VERSION=//p' build/rabbitmq/Dockerfile)
+          RABBITMQ_VARIANT=$(sed -n 's/^ARG RABBITMQ_VARIANT=//p' build/rabbitmq/Dockerfile)
+          RABBITMQ_TAG="${RABBITMQ_VERSION}${RABBITMQ_VARIANT}"
+          echo "SIR_VERSION=$SIR_VERSION" >> "$GITHUB_ENV"
+          echo "RABBITMQ_TAG=$RABBITMQ_TAG" >> "$GITHUB_ENV"
+
+      - name: Checkout deploy repo
+        uses: actions/checkout@v4
+        with:
+          repository: HVR88/MBMS_PLUS
+          token: ${{ secrets.MBMS_TOKEN }}
+          path: deploy
+
+      - name: Stage deploy files
+        run: |
+          set -e
+          rm -rf deploy-out
+          mkdir -p deploy-out/compose deploy-out/default deploy-out/local deploy-out/build/solr/scripts
+
+          cp docker-compose.yml deploy-out/
+          cp compose/bootstrap.yml compose/indexing-cron.yml compose/lm-bridge.yml compose/dockerhub-images.yml deploy-out/compose/
+          cp default/postgres.env default/indexer.ini deploy-out/default/
+          cp local/network.override.yml deploy-out/local/
+          cp build/solr/scripts/bootstrap-indexes.sh deploy-out/build/solr/scripts/
+          cp .env deploy-out/.env
+
+          python3 - <<'PY'
+          from __future__ import annotations
+
+          import os
+          from pathlib import Path
+
+          env_path = Path("deploy-out/.env")
+          text = env_path.read_text()
+          lines = text.splitlines()
+
+          def upsert(lines: list[str], key: str, value: str) -> list[str]:
+            out: list[str] = []
+            found = False
+            prefix = f\"{key}=\"
+            for line in lines:
+              if line.startswith(prefix):
+                out.append(prefix + value)
+                found = True
+              else:
+                out.append(line)
+            if not found:
+              out.append(prefix + value)
+            return out
+
+          def update_compose_file(lines: list[str]) -> list[str]:
+            out: list[str] = []
+            found = False
+            for line in lines:
+              if line.startswith(\"COMPOSE_FILE=\"):
+                found = True
+                value = line.split(\"=\", 1)[1]
+                if \"compose/dockerhub-images.yml\" not in value:
+                  value = value + \":compose/dockerhub-images.yml\"
+                out.append(\"COMPOSE_FILE=\" + value)
+              else:
+                out.append(line)
+            if not found:
+              out.insert(0, \"COMPOSE_FILE=docker-compose.yml:compose/bootstrap.yml:compose/indexing-cron.yml:compose/lm-bridge.yml:local/network.override.yml:compose/dockerhub-images.yml\")
+            return out
+
+          lines = update_compose_file(lines)
+          lines = upsert(lines, \"MBMS_DOCKERHUB_NAMESPACE\", \"espressomatic\")
+          lines = upsert(lines, \"MBMS_DOCKERHUB_REPO_PREFIX\", \"mbms-plus\")
+          lines = upsert(lines, \"SIR_VERSION\", os.environ[\"SIR_VERSION\"])
+          lines = upsert(lines, \"RABBITMQ_TAG\", os.environ[\"RABBITMQ_TAG\"])
+
+          env_path.write_text(\"\\n\".join(lines).rstrip() + \"\\n\")
+          PY
+
+      - name: Sync deploy repo
+        run: |
+          set -e
+          rsync -a --delete --exclude .git deploy-out/ deploy/
+
+      - name: Commit and push
+        working-directory: deploy
+        run: |
+          set -e
+          if [ -z \"$(git status --porcelain)\" ]; then
+            echo \"No deploy changes to publish.\"
+            exit 0
+          fi
+          git config user.name \"github-actions[bot]\"
+          git config user.email \"github-actions[bot]@users.noreply.github.com\"
+          git add -A
+          git commit -m \"Publish deploy files from ${GITHUB_REPOSITORY}@${GITHUB_SHA}\"
+          git push
