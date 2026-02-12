@@ -373,22 +373,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          TAG_VERSION=$(python3 - <<'PY'
-          import os
-          import re
-
-          version = open("VERSION").read().strip()
-          m = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)\.(\d{1,3})", version)
-          if not m:
-            raise SystemExit(f"VERSION format invalid: {version!r}")
-          major, minor, release, build = map(int, m.groups())
-          if build == 0:
-            tag = f"{major}.{minor}.{release}"
-          else:
-            tag = f"{major}.{minor}.{release}.{build}"
-          print(tag)
-          PY
-          )
+          TAG_VERSION="${MBMS_TAG_VERSION}"
           echo "TAG_VERSION=$TAG_VERSION" >> "$GITHUB_ENV"
 
           TAG="v${TAG_VERSION}"
