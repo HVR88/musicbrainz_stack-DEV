@@ -331,7 +331,7 @@ jobs:
           def upsert(lines: list[str], key: str, value: str) -> list[str]:
             out: list[str] = []
             found = False
-            prefix = f\"{key}=\"
+            prefix = f"{key}="
             for line in lines:
               if line.startswith(prefix):
                 out.append(prefix + value)
@@ -346,25 +346,25 @@ jobs:
             out: list[str] = []
             found = False
             for line in lines:
-              if line.startswith(\"COMPOSE_FILE=\"):
+              if line.startswith("COMPOSE_FILE="):
                 found = True
-                value = line.split(\"=\", 1)[1]
-                if \"compose/dockerhub-images.yml\" not in value:
-                  value = value + \":compose/dockerhub-images.yml\"
-                out.append(\"COMPOSE_FILE=\" + value)
+                value = line.split("=", 1)[1]
+                if "compose/dockerhub-images.yml" not in value:
+                  value = value + ":compose/dockerhub-images.yml"
+                out.append("COMPOSE_FILE=" + value)
               else:
                 out.append(line)
             if not found:
-              out.insert(0, \"COMPOSE_FILE=docker-compose.yml:compose/bootstrap.yml:compose/indexing-cron.yml:compose/lm-bridge.yml:local/network.override.yml:compose/dockerhub-images.yml\")
+              out.insert(0, "COMPOSE_FILE=docker-compose.yml:compose/bootstrap.yml:compose/indexing-cron.yml:compose/lm-bridge.yml:local/network.override.yml:compose/dockerhub-images.yml")
             return out
 
           lines = update_compose_file(lines)
-          lines = upsert(lines, \"MBMS_DOCKERHUB_NAMESPACE\", \"espressomatic\")
-          lines = upsert(lines, \"MBMS_DOCKERHUB_REPO_PREFIX\", \"mbms-plus\")
-          lines = upsert(lines, \"SIR_VERSION\", os.environ[\"SIR_VERSION\"])
-          lines = upsert(lines, \"RABBITMQ_TAG\", os.environ[\"RABBITMQ_TAG\"])
+          lines = upsert(lines, "MBMS_DOCKERHUB_NAMESPACE", "espressomatic")
+          lines = upsert(lines, "MBMS_DOCKERHUB_REPO_PREFIX", "mbms-plus")
+          lines = upsert(lines, "SIR_VERSION", os.environ["SIR_VERSION"])
+          lines = upsert(lines, "RABBITMQ_TAG", os.environ["RABBITMQ_TAG"])
 
-          env_path.write_text(\"\\n\".join(lines).rstrip() + \"\\n\")
+          env_path.write_text("\n".join(lines).rstrip() + "\n")
           PY
 
       - name: Sync deploy repo
