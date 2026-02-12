@@ -20,6 +20,7 @@ permissions:
 jobs:
   publish-dockerhub:
     name: Publish to Docker Hub
+    if: ${{ github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     env:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -196,6 +197,7 @@ jobs:
 
   publish-deploy:
     name: Publish Deploy Repo
+    if: ${{ github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     env:
       MBMS_TOKEN: ${{ secrets.MBMS_TOKEN }}
@@ -313,4 +315,63 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Publish deploy files from ${GITHUB_REPOSITORY}@${GITHUB_SHA}"
+          git push
+
+  release:
+    name: Tag Release and Bump Minor
+    needs:
+      - publish-dockerhub
+      - publish-deploy
+    if: ${{ github.actor != 'github-actions[bot]' && needs.publish-dockerhub.result == 'success' && needs.publish-deploy.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Tag release
+        run: |
+          set -e
+          VERSION=$(cat VERSION)
+          git fetch --tags
+          TAG="release-${VERSION}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists."
+            exit 0
+          fi
+          git tag -a "$TAG" -m "Release $VERSION"
+          git push origin "$TAG"
+
+      - name: Bump minor and reset build
+        run: |
+          set -e
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          path = Path("VERSION")
+          version = path.read_text().strip()
+          m = re.fullmatch(r"(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)", version)
+          if not m:
+            raise SystemExit(f"VERSION format invalid: {version!r}")
+
+          major, minor, release, build = map(int, m.groups())
+          release += 1
+          build = 0
+          new_version = f"{major}.{minor}.{release}.{build}"
+          path.write_text(new_version + "\\n")
+          print(new_version)
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add VERSION
+          if git diff --cached --quiet; then
+            echo "No version change to commit."
+            exit 0
+          fi
+          NEW_VERSION=$(cat VERSION)
+          git commit -m "Bump minor to ${NEW_VERSION}"
           git push
