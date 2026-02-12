@@ -4,7 +4,9 @@
 
 # MusicBrainz Mirror Server PLUS (MBMS DEV)
 
-This repo is a streamlined, automation-first wrapper around the official MusicBrainz Docker stack plus a custom Lidarr/MusicBrainz API bridge. It keeps the modern multi-service architecture (Postgres, Solr, SIR, RabbitMQ, Redis) but removes the multi-step manual setup by adding bootstrap and scheduling services.
+This repo contains a streamlined, automation-first wrapper around the official MusicBrainz Docker stack plus a custom Lidarr/MusicBrainz API bridge. It keeps the modern multi-service architecture (Postgres, Solr, SIR, RabbitMQ, Redis) but removes the multi-step manual setup by adding bootstrap and scheduling services.
+
+To deploy the pre-built docker containers, clone the production repo: https://github.com/HVR88/MBMS_PLUS
 
 ## Highlights
 

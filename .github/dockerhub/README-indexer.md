@@ -1,4 +1,4 @@
-# MBMS_PLUS Indexer
+# MBMS PLUS (5 of 6): Indexer
 
 SIR indexer/cron container for MBMS_PLUS search reindexing.
 

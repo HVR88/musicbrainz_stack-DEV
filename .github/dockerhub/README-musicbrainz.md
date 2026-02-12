@@ -1,4 +1,4 @@
-# MBMS_PLUS MusicBrainz
+# MBMS PLUS (2 of 6): MusicBrainz
 
 MusicBrainz web server container for MBMS_PLUS.
 

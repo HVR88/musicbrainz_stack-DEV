@@ -152,27 +152,27 @@ jobs:
           set -e
           case "${{ matrix.name }}" in
             db)
-              SHORT_DESC="PostgreSQL database for MBMS_PLUS - MusicBrainz Mirror Server PLUS + Lidarr API Bridge."
+              SHORT_DESC="MBMS PLUS (1 of 6): DB"
               README_FILE=".github/dockerhub/README-db.md"
               ;;
             musicbrainz)
-              SHORT_DESC="MusicBrainz web server for MBMS_PLUS - MusicBrainz Mirror Server PLUS + Lidarr API Bridge."
+              SHORT_DESC="MBMS PLUS (2 of 6): MusicBrainz"
               README_FILE=".github/dockerhub/README-musicbrainz.md"
               ;;
             bootstrap)
-              SHORT_DESC="Bootstrap helper for MBMS_PLUS - imports dumps, materialized tables, and indexes."
+              SHORT_DESC="MBMS PLUS (3 of 6): Bootstrap"
               README_FILE=".github/dockerhub/README-bootstrap.md"
               ;;
             search)
-              SHORT_DESC="Solr search for MBMS_PLUS - MusicBrainz Mirror Server PLUS + Lidarr API Bridge."
+              SHORT_DESC="MBMS PLUS (4 of 6): Search"
               README_FILE=".github/dockerhub/README-search.md"
               ;;
             indexer)
-              SHORT_DESC="SIR indexer for MBMS_PLUS - MusicBrainz Mirror Server PLUS + Lidarr API Bridge."
+              SHORT_DESC="MBMS PLUS (5 of 6): Indexer"
               README_FILE=".github/dockerhub/README-indexer.md"
               ;;
             mq)
-              SHORT_DESC="RabbitMQ broker for MBMS_PLUS - MusicBrainz Mirror Server PLUS + Lidarr API Bridge."
+              SHORT_DESC="MBMS PLUS (6 of 6): MQ"
               README_FILE=".github/dockerhub/README-mq.md"
               ;;
             *)

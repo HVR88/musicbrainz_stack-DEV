@@ -1,4 +1,4 @@
-# MBMS_PLUS DB
+# MBMS PLUS (1 of 6): DB
 
 PostgreSQL database for MBMS_PLUS.
 
