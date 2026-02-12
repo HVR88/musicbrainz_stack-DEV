@@ -128,8 +128,8 @@ jobs:
           TAGS="$IMAGE_NAMESPACE/${{ matrix.name }}:$VERSION"
           TAGS="$TAGS"$'\n'"$IMAGE_NAMESPACE/${{ matrix.name }}:sha-$SHORT_SHA"
 
-          printf "TAGS<<'EOF'\n%s\nEOF\n" "$TAGS" >> "$GITHUB_ENV"
-          printf "BUILD_ARGS<<'EOF'\n%s\nEOF\n" "$BUILD_ARGS" >> "$GITHUB_ENV"
+          printf "TAGS<<EOF\n%s\nEOF\n" "$TAGS" >> "$GITHUB_ENV"
+          printf "BUILD_ARGS<<EOF\n%s\nEOF\n" "$BUILD_ARGS" >> "$GITHUB_ENV"
 
       - name: Build and push images
         uses: docker/build-push-action@v6
@@ -255,8 +255,8 @@ jobs:
           TAGS="$IMAGE_REGISTRY/$IMAGE_NAMESPACE/${IMAGE_REPO_PREFIX}-${{ matrix.name }}:$VERSION"
           TAGS="$TAGS"$'\n'"$IMAGE_REGISTRY/$IMAGE_NAMESPACE/${IMAGE_REPO_PREFIX}-${{ matrix.name }}:sha-$SHORT_SHA"
 
-          printf "TAGS<<'EOF'\n%s\nEOF\n" "$TAGS" >> "$GITHUB_ENV"
-          printf "BUILD_ARGS<<'EOF'\n%s\nEOF\n" "$BUILD_ARGS" >> "$GITHUB_ENV"
+          printf "TAGS<<EOF\n%s\nEOF\n" "$TAGS" >> "$GITHUB_ENV"
+          printf "BUILD_ARGS<<EOF\n%s\nEOF\n" "$BUILD_ARGS" >> "$GITHUB_ENV"
 
       - name: Build and push images
         uses: docker/build-push-action@v6
