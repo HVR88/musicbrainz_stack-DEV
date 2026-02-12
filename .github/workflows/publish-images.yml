@@ -95,7 +95,8 @@ jobs:
           if not m:
             raise SystemExit(f"VERSION format invalid: {version!r}")
           major, minor, release, build = map(int, m.groups())
-          tag = f"{major}.{minor}.{release}"
+          next_release = release + 1
+          tag = f"{major}.{minor}.{next_release}"
           print(f"DOCKER_TAG_VERSION={tag}")
           PY
 
@@ -255,11 +256,11 @@ jobs:
           if not m:
             raise SystemExit(f"VERSION format invalid: {version!r}")
           major, minor, release, build = map(int, m.groups())
-          if build == 0:
-            tag = f"{major}.{minor}.{release}"
-          else:
-            tag = f"{major}.{minor}.{release}.{build}"
+          next_release = release + 1
+          tag = f"{major}.{minor}.{next_release}"
           print(f"MBMS_TAG_VERSION={tag}")
+          next_version_full = f"{major}.{minor}.{next_release}.0"
+          print(f"MBMS_NEXT_VERSION_FULL={next_version_full}")
           PY
           SIR_VERSION=$(sed -n 's/^ARG SIR_VERSION=//p' build/sir/Dockerfile)
           RABBITMQ_VERSION=$(sed -n 's/^ARG RABBITMQ_VERSION=//p' build/rabbitmq/Dockerfile)
@@ -283,7 +284,7 @@ jobs:
 
           cp docker-compose.yml deploy-out/
           cp deploy-assets/README.md deploy-out/README.md
-          cp VERSION deploy-out/
+          echo "$MBMS_NEXT_VERSION_FULL" > deploy-out/VERSION
           cp compose/bootstrap.yml compose/indexing-cron.yml compose/lm-bridge.yml compose/dockerhub-images.yml deploy-out/compose/
           cp default/postgres.env default/indexer.ini deploy-out/default/
           if [ -f local/network.override.yml ]; then
@@ -374,30 +375,14 @@ jobs:
           GH_TOKEN: ${{ secrets.MBMS_TOKEN }}
         run: |
           set -e
-          python3 - <<'PY'
-          import re
-          from pathlib import Path
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          path = Path("VERSION")
-          version = path.read_text().strip()
-          m = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)\.(\d{1,3})", version)
-          if not m:
-            raise SystemExit(f"VERSION format invalid: {version!r}")
-
-          major, minor, release, build = map(int, m.groups())
-          release += 1
-          build = 0
-          new_version = f"{major}.{minor}.{release}.{build}"
-          path.write_text(new_version + "\n")
-          print(new_version)
-          PY
-
-          NEW_VERSION=$(cat VERSION)
-          TAG_VERSION=$(NEW_VERSION="$NEW_VERSION" python3 - <<'PY'
+          TAG_VERSION=$(python3 - <<'PY'
           import os
           import re
 
-          version = os.environ["NEW_VERSION"]
+          version = open("VERSION").read().strip()
           m = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)\.(\d{1,3})", version)
           if not m:
             raise SystemExit(f"VERSION format invalid: {version!r}")
@@ -410,13 +395,6 @@ jobs:
           PY
           )
           echo "TAG_VERSION=$TAG_VERSION" >> "$GITHUB_ENV"
-          git add VERSION
-          if ! git diff --cached --quiet; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git commit -m "Bump release to ${NEW_VERSION}"
-            git push
-          fi
 
           TAG="v${TAG_VERSION}"
           git fetch --tags
@@ -448,16 +426,28 @@ jobs:
       - name: Tag release
         run: |
           set -e
-          VERSION=$(cat VERSION)
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          TAG_VERSION=$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          version = Path("VERSION").read_text().strip()
+          m = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)\.(\d{1,3})", version)
+          if not m:
+            raise SystemExit(f"VERSION format invalid: {version!r}")
+          major, minor, release, build = map(int, m.groups())
+          release += 1
+          print(f"{major}.{minor}.{release}")
+          PY
+          )
           git fetch --tags
-          TAG="release-${VERSION}"
+          TAG="release-${TAG_VERSION}"
           if git rev-parse "$TAG" >/dev/null 2>&1; then
             echo "Tag $TAG already exists."
             exit 0
           fi
-          git tag -a "$TAG" -m "Release $VERSION"
+          git tag -a "$TAG" -m "Release $TAG_VERSION"
           git push origin "$TAG"
 
       - name: Bump minor and reset build

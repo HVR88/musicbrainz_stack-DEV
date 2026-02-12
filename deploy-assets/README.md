@@ -10,15 +10,16 @@
 
 ### Register for MusicBrainz access
 
-1. Create an account at MusicBrainz.com
+1. Create an account at https://MusicBrainz.com
 2. Get your _Live Data Feed Access Token_ from Metabrainz https://metabrainz.org/profile
 
 ### Download the pre-built containers
 
-```bash
+```
+mkdir -p /opt/docker/
+cd /opt/docker/
 git clone https://github.com/HVR88/MBMS_PLUS.git
-
-cd MBMS_PLUS
+cd /opt/docker/MBMS_PLUS
 ```
 
 ### Minimally Configure .env
@@ -29,6 +30,12 @@ Edit `.env` (top section) before first run:
 - `MUSICBRAINZ_REPLICATION_TOKEN` (required for replication)
 - `MUSICBRAINZ_WEB_SERVER_HOST` / `MUSICBRAINZ_WEB_SERVER_PORT` as needed
 - Optional provider keys for LM-Bridge (FANART/LASTFM/SPOTIFY)
+
+### Start the containers
+
+```
+docker compose up -d
+```
 
 ## Notes
 
