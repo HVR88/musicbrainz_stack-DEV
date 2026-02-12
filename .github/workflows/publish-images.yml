@@ -53,6 +53,21 @@ jobs:
 
           MBMS_VERSION=$(cat VERSION)
           echo "MBMS_VERSION=$MBMS_VERSION" >> "$GITHUB_ENV"
+          MBMS_TAG_VERSION=$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          version = Path("VERSION").read_text().strip()
+          m = re.fullmatch(r"(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d{1,3})", version)
+          if not m:
+            raise SystemExit(f"VERSION format invalid: {version!r}")
+          major, minor, release, build = map(int, m.groups())
+          if build == 0:
+            print(f"{major}.{minor}.{release}")
+          else:
+            print(f"{major}.{minor}.{release}.{build:03d}")
+          PY)
+          echo "MBMS_TAG_VERSION=$MBMS_TAG_VERSION" >> "$GITHUB_ENV"
 
           echo "POSTGRES_VERSION=$POSTGRES_VERSION" >> "$GITHUB_ENV"
           echo "MB_SOLR_VERSION=$MB_SOLR_VERSION" >> "$GITHUB_ENV"
@@ -121,7 +136,7 @@ jobs:
               ;;
           esac
 
-          TAGS="$IMAGE_REGISTRY/$IMAGE_NAMESPACE/${IMAGE_REPO_PREFIX}-${{ matrix.name }}:$MBMS_VERSION"
+          TAGS="$IMAGE_REGISTRY/$IMAGE_NAMESPACE/${IMAGE_REPO_PREFIX}-${{ matrix.name }}:$MBMS_TAG_VERSION"
           TAGS="$TAGS"$'\n'"$IMAGE_REGISTRY/$IMAGE_NAMESPACE/${IMAGE_REPO_PREFIX}-${{ matrix.name }}:latest"
 
           printf "TAGS<<EOF\n%s\nEOF\n" "$TAGS" >> "$GITHUB_ENV"
@@ -201,6 +216,21 @@ jobs:
           set -e
           MBMS_VERSION=$(cat VERSION)
           echo "MBMS_VERSION=$MBMS_VERSION" >> "$GITHUB_ENV"
+          MBMS_TAG_VERSION=$(python3 - <<'PY'
+          import re
+          from pathlib import Path
+
+          version = Path("VERSION").read_text().strip()
+          m = re.fullmatch(r"(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d{1,3})", version)
+          if not m:
+            raise SystemExit(f"VERSION format invalid: {version!r}")
+          major, minor, release, build = map(int, m.groups())
+          if build == 0:
+            print(f"{major}.{minor}.{release}")
+          else:
+            print(f"{major}.{minor}.{release}.{build:03d}")
+          PY)
+          echo "MBMS_TAG_VERSION=$MBMS_TAG_VERSION" >> "$GITHUB_ENV"
           SIR_VERSION=$(sed -n 's/^ARG SIR_VERSION=//p' build/sir/Dockerfile)
           RABBITMQ_VERSION=$(sed -n 's/^ARG RABBITMQ_VERSION=//p' build/rabbitmq/Dockerfile)
           RABBITMQ_VARIANT=$(sed -n 's/^ARG RABBITMQ_VARIANT=//p' build/rabbitmq/Dockerfile)
@@ -280,7 +310,7 @@ jobs:
             return out
 
           lines = update_compose_file(lines)
-          lines = upsert(lines, "MBMS_VERSION", os.environ["MBMS_VERSION"])
+          lines = upsert(lines, "MBMS_VERSION", os.environ["MBMS_TAG_VERSION"])
           lines = upsert(lines, "MBMS_DOCKERHUB_NAMESPACE", "espressomatic")
           lines = upsert(lines, "MBMS_DOCKERHUB_REPO_PREFIX", "mbms-plus")
           lines = upsert(lines, "SIR_VERSION", os.environ["SIR_VERSION"])
@@ -333,6 +363,18 @@ jobs:
           PY
 
           NEW_VERSION=$(cat VERSION)
+          TAG_VERSION=$(python3 - <<'PY'
+          import re
+          version = """${NEW_VERSION}"""
+          m = re.fullmatch(r"(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d{1,3})", version)
+          if not m:
+            raise SystemExit(f"VERSION format invalid: {version!r}")
+          major, minor, release, build = map(int, m.groups())
+          if build == 0:
+            print(f"{major}.{minor}.{release}")
+          else:
+            print(f"{major}.{minor}.{release}.{build:03d}")
+          PY)
           git add VERSION
           if ! git diff --cached --quiet; then
             git config user.name "github-actions[bot]"
@@ -341,17 +383,17 @@ jobs:
             git push
           fi
 
-          TAG="v${NEW_VERSION}"
+          TAG="v${TAG_VERSION}"
           git fetch --tags
           if git rev-parse "$TAG" >/dev/null 2>&1; then
             echo "Tag $TAG already exists."
           else
-            git tag -a "$TAG" -m "MBMS_PLUS ${NEW_VERSION}"
+            git tag -a "$TAG" -m "MBMS_PLUS ${TAG_VERSION}"
             git push origin "$TAG"
           fi
 
           if ! gh release view "$TAG" -R HVR88/MBMS_PLUS >/dev/null 2>&1; then
-            gh release create "$TAG" -R HVR88/MBMS_PLUS -t "MBMS_PLUS ${NEW_VERSION}" -n "Automated deploy release."
+            gh release create "$TAG" -R HVR88/MBMS_PLUS -t "MBMS_PLUS ${TAG_VERSION}" -n "Automated deploy release."
           fi
 
   release:
