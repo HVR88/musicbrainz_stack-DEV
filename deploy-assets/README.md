@@ -6,9 +6,9 @@
 
 **_MusicBrainz Mirror Server PLUS - Full stack with Lidarr API Bridge_**
 
-> [!WARNING]
+> [!CAUTION]
 >
-> This container stack is exclusively for personal use. **ABSOLUTELY NO COMMERCIAL NOR BUSINESS USE IS AUTHORIZED.**
+> This container stack is exclusively for personal use. **NO COMMERCIAL OR BUSINESS USE IS PERMITTED.**
 
 _The initial "compose up" will start a 3.5GB download, with the full installation after setup needing an additional 300GB. **This setup takes at least a few hours.**_
 

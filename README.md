@@ -10,10 +10,6 @@ This repo contains a streamlined, automation-first wrapper around the official M
 >
 > **To deploy pre-built docker containers, clone production repo: https://github.com/HVR88/MBMS_PLUS**
 
-> [!WARNING]
->
-> This container stack is exclusively for personal use. **ABSOLUTELY NO COMMERCIAL NOR BUSINESS USE IS AUTHORIZED.**
-
 ## Highlights
 
 - One-command bring-up with automatic database import
@@ -22,6 +18,10 @@ This repo contains a streamlined, automation-first wrapper around the official M
 - Replication and indexing schedules controlled via simple env values
 - Helper scripts for first run, validation, and manual jobs
 - API Bridge betwallowing cached queries from Lidarr to MusicBrainz
+
+> [!CAUTION]
+>
+> This container stack is exclusively for personal use. **NO COMMERCIAL OR BUSINESS USE IS PERMITTED.**
 
 ## Quick start
 
