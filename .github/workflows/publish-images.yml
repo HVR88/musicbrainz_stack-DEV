@@ -1,16 +1,6 @@
 name: Publish Images
 
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - build/**
-      - compose/**
-      - docker-compose.yml
-      - .env
-      - .env.example
-      - .github/workflows/publish-images.yml
   workflow_dispatch:
 
 permissions:
