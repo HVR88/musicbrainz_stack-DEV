@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_ARG=()
+if [ "${1:-}" != "" ]; then
+  REPO_ARG=(--repo "$1")
+fi
+
+HEAD_SHA=$(git rev-parse HEAD)
+
+RUNS_JSON=$(gh run list "${REPO_ARG[@]}" --limit 50 --json databaseId,status,headSha 2>/dev/null || true)
+
+RUN_IDS=$(python3 - <<'PY' "${HEAD_SHA}" "${RUNS_JSON}")
+import json
+import sys
+
+head_sha = sys.argv[1]
+data = sys.argv[2]
+if not data:
+    sys.exit(0)
+
+runs = json.loads(data)
+ids = [
+    str(run["databaseId"])
+    for run in runs
+    if run.get("headSha") == head_sha and run.get("status") in ("queued", "in_progress")
+]
+print("\n".join(ids))
+PY
+
+if [ -z "${RUN_IDS}" ]; then
+  echo "No active workflow runs for ${HEAD_SHA:0:7}. Pulling latest changes."
+  git pull
+  exit 0
+fi
+
+echo "Waiting for workflows for ${HEAD_SHA:0:7}..."
+while IFS= read -r run_id; do
+  if [ -n "$run_id" ]; then
+    gh run watch "$run_id" "${REPO_ARG[@]}" --exit-status
+  fi
+done <<< "$RUN_IDS"
+
+git pull
