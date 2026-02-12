@@ -144,53 +144,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Compute Docker Hub description
-        run: |
-          set -e
-          case "${{ matrix.name }}" in
-            db)
-              SHORT_DESC="PostgreSQL database for MBMS_PLUS - MusicBrainz Mirror Server PLUS + Lidarr API Bridge."
-              README_FILE=".github/dockerhub/README-db.md"
-              ;;
-            musicbrainz)
-              SHORT_DESC="MusicBrainz web server for MBMS_PLUS - MusicBrainz Mirror Server PLUS + Lidarr API Bridge."
-              README_FILE=".github/dockerhub/README-musicbrainz.md"
-              ;;
-            bootstrap)
-              SHORT_DESC="Bootstrap helper for MBMS_PLUS - imports dumps, materialized tables, and indexes."
-              README_FILE=".github/dockerhub/README-bootstrap.md"
-              ;;
-            search)
-              SHORT_DESC="Solr search for MBMS_PLUS - MusicBrainz Mirror Server PLUS + Lidarr API Bridge."
-              README_FILE=".github/dockerhub/README-search.md"
-              ;;
-            indexer)
-              SHORT_DESC="SIR indexer for MBMS_PLUS - MusicBrainz Mirror Server PLUS + Lidarr API Bridge."
-              README_FILE=".github/dockerhub/README-indexer.md"
-              ;;
-            mq)
-              SHORT_DESC="RabbitMQ broker for MBMS_PLUS - MusicBrainz Mirror Server PLUS + Lidarr API Bridge."
-              README_FILE=".github/dockerhub/README-mq.md"
-              ;;
-            *)
-              echo "Unknown image: ${{ matrix.name }}" >&2
-              exit 1
-              ;;
-          esac
-
-          echo "DOCKERHUB_REPO=${IMAGE_REPO_PREFIX}-${{ matrix.name }}" >> "$GITHUB_ENV"
-          echo "SHORT_DESC=$SHORT_DESC" >> "$GITHUB_ENV"
-          echo "README_FILE=$README_FILE" >> "$GITHUB_ENV"
-
-      - name: Update Docker Hub description
-        uses: peter-evans/dockerhub-description@v4
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN_MBMS }}
-          repository: ${{ env.IMAGE_NAMESPACE }}/${{ env.DOCKERHUB_REPO }}
-          short-description: ${{ env.SHORT_DESC }}
-          readme-filepath: ${{ env.README_FILE }}
-
   publish-dockerhub:
     name: Publish to Docker Hub
     runs-on: ubuntu-latest
@@ -319,6 +272,53 @@ jobs:
           build-args: ${{ env.BUILD_ARGS }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Compute Docker Hub description
+        run: |
+          set -e
+          case "${{ matrix.name }}" in
+            db)
+              SHORT_DESC="PostgreSQL database for MBMS_PLUS - MusicBrainz Mirror Server PLUS + Lidarr API Bridge."
+              README_FILE=".github/dockerhub/README-db.md"
+              ;;
+            musicbrainz)
+              SHORT_DESC="MusicBrainz web server for MBMS_PLUS - MusicBrainz Mirror Server PLUS + Lidarr API Bridge."
+              README_FILE=".github/dockerhub/README-musicbrainz.md"
+              ;;
+            bootstrap)
+              SHORT_DESC="Bootstrap helper for MBMS_PLUS - imports dumps, materialized tables, and indexes."
+              README_FILE=".github/dockerhub/README-bootstrap.md"
+              ;;
+            search)
+              SHORT_DESC="Solr search for MBMS_PLUS - MusicBrainz Mirror Server PLUS + Lidarr API Bridge."
+              README_FILE=".github/dockerhub/README-search.md"
+              ;;
+            indexer)
+              SHORT_DESC="SIR indexer for MBMS_PLUS - MusicBrainz Mirror Server PLUS + Lidarr API Bridge."
+              README_FILE=".github/dockerhub/README-indexer.md"
+              ;;
+            mq)
+              SHORT_DESC="RabbitMQ broker for MBMS_PLUS - MusicBrainz Mirror Server PLUS + Lidarr API Bridge."
+              README_FILE=".github/dockerhub/README-mq.md"
+              ;;
+            *)
+              echo "Unknown image: ${{ matrix.name }}" >&2
+              exit 1
+              ;;
+          esac
+
+          echo "DOCKERHUB_REPO=${IMAGE_REPO_PREFIX}-${{ matrix.name }}" >> "$GITHUB_ENV"
+          echo "SHORT_DESC=$SHORT_DESC" >> "$GITHUB_ENV"
+          echo "README_FILE=$README_FILE" >> "$GITHUB_ENV"
+
+      - name: Update Docker Hub description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN_MBMS }}
+          repository: ${{ env.IMAGE_NAMESPACE }}/${{ env.DOCKERHUB_REPO }}
+          short-description: ${{ env.SHORT_DESC }}
+          readme-filepath: ${{ env.README_FILE }}
 
   publish-deploy:
     name: Publish Deploy Repo
