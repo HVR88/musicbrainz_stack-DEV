@@ -7,7 +7,7 @@ services:
     command:
       - |
         if [ -z "${COMPOSE_PROFILES:-}" ] || ! printf ',%s,' "${COMPOSE_PROFILES}" | grep -q ',mbms,'; then
-          echo "Please uncomment COMPOSE_PROFILES=mbms in .env before running docker compose up." >&2
+          echo "You need to edit the .env file before starting. Uncomment COMPOSE_PROFILES=mbms." >&2
           exit 1
         fi
         if [ -n "${MUSICBRAINZ_REPLICATION_ENABLED:-1}" ] && [ "${MUSICBRAINZ_REPLICATION_ENABLED}" != "0" ] && [ "${MUSICBRAINZ_REPLICATION_ENABLED}" != "false" ]; then
