@@ -24,7 +24,7 @@ This repo contains a streamlined, automation-first wrapper around the official M
 0. Get your Live Data Feed Access Token from Metabrainz first
    https://metabrainz.org/profile
 
-1. Edit `.env` (included in this repo) to match your environment.
+1. Edit `.env` (included in this repo) to match your environment. Set `COMPOSE_PROFILES=mbms` and remove the `NO_OP` line.
 
 2. Start everything (bootstrap + services):
 

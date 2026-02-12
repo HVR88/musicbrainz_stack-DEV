@@ -10,6 +10,10 @@ services:
           echo "Please review and edit the .env file before proceeding with docker compose up." >&2
           exit 1
         fi
+        if [ -z "${COMPOSE_PROFILES:-}" ]; then
+          echo "Please set COMPOSE_PROFILES=mbms in .env before running docker compose up." >&2
+          exit 1
+        fi
         if [ -n "${MUSICBRAINZ_REPLICATION_ENABLED:-1}" ] && [ "${MUSICBRAINZ_REPLICATION_ENABLED}" != "0" ] && [ "${MUSICBRAINZ_REPLICATION_ENABLED}" != "false" ]; then
           if [ -z "${MUSICBRAINZ_REPLICATION_TOKEN:-}" ]; then
             echo "Missing MUSICBRAINZ_REPLICATION_TOKEN. Set it in .env before running docker compose up." >&2
@@ -22,6 +26,7 @@ services:
     restart: "no"
 
   bootstrap:
+    profiles: ["mbms"]
     build:
       context: build/bootstrap
       args:
@@ -48,6 +53,7 @@ services:
         condition: service_started
 
   search-bootstrap:
+    profiles: ["mbms"]
     build:
       context: build/solr
       args:

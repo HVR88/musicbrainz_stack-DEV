@@ -14,6 +14,7 @@ volumes:
 
 services:
   db:
+    profiles: ["mbms"]
     build:
       context: build/postgres-prebuilt
     image: musicbrainz-docker_db:${POSTGRES_VERSION:-16}
@@ -33,6 +34,7 @@ services:
       - "5432"
 
   musicbrainz:
+    profiles: ["mbms"]
     build:
       context: build/musicbrainz-prebuilt
     logging:
@@ -68,6 +70,7 @@ services:
       - redis
 
   indexer:
+    profiles: ["mbms"]
     build: build/sir
     env_file:
       - ./default/postgres.env
@@ -84,6 +87,7 @@ services:
       - search
 
   search:
+    profiles: ["mbms"]
     build:
       context: build/solr
       args:
@@ -107,6 +111,7 @@ services:
       - solrdump:/var/cache/musicbrainz/solr-backups
 
   mq:
+    profiles: ["mbms"]
     build: build/rabbitmq
     hostname: "mq"
     logging:
@@ -123,6 +128,7 @@ services:
       - "5672"
 
   redis:
+    profiles: ["mbms"]
     image: redis:3-alpine
     logging:
       driver: "json-file"
