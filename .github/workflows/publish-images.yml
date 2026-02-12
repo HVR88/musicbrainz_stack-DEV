@@ -145,7 +145,6 @@ jobs:
 
   publish-dockerhub:
     name: Publish to Docker Hub
-    if: ${{ env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN_MBMS != '' }}
     runs-on: ubuntu-latest
     env:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -273,7 +272,6 @@ jobs:
 
   publish-deploy:
     name: Publish Deploy Repo
-    if: ${{ env.MBMS_TOKEN != '' }}
     runs-on: ubuntu-latest
     env:
       MBMS_TOKEN: ${{ secrets.MBMS_TOKEN }}
