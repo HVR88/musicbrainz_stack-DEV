@@ -12,7 +12,11 @@
 
 _The initial "compose up" will start a 3.5GB download, with the full installation after setup needing an additional 300GB. **This setup takes at least a few hours.**_
 
-It's recommended you install onto a volume with at least 500GB free to allow for future replication and updates.
+> [!TIP]
+>
+> It's recommended you install onto a volume with at least 500GB free to allow for future replication and updates.
+>
+> If you're deploying from a terminal session, it's strongly recommended to use screen or tmux so the compose process can continue running if your terminal session drops (closing the window, computer goes to sleep, etc.)
 
 ## Quick start
 
@@ -38,7 +42,7 @@ Edit `.env` (top section) before first run:
 - `MUSICBRAINZ_REPLICATION_TOKEN` (required for replication)
 - `MUSICBRAINZ_WEB_SERVER_HOST` ('localhost' default, edit as needed)
 - `MUSICBRAINZ_WEB_SERVER_PORT` ('5000' default, edit as needed)
-- Optional provider keys for LM-Bridge (FANART/LASTFM/SPOTIFY)
+- Optional provider keys/tokens for LM-Bridge (Cover Art Archive/Fanart/Last.FM)
 
 ### 4. Start the containers download and startup - LARGE / HOURS
 
@@ -46,12 +50,20 @@ Edit `.env` (top section) before first run:
 docker compose up -d
 ```
 
-When finished, your MusicBrainz mirror will be available at http://HOST_IP_Address:5000
-The Lidarr API bridge will accept connections at the same address on port 5001
+## Wrap-up
+
+You can monitor the progress of the long database jobs:
+
+```
+docker compose logs -f --no-log-prefix bootstrap
+```
+
+When finished, your MusicBrainz mirror will be available at **http://HOST_IP_Address:5000**
+<br>The Lidarr API bridge will accept connections at the same address on port 5001
 
 > [!TIP]
 >
-> Put a reverse proxy (NPM, Caddy, Traefik, SWAG) in front of your host IP and use your own (sub)domain to reach your MusicBrainz mirror on port 80 or 443 (HTTPS).
+> Put a reverse proxy (NPM, Caddy, Traefik, SWAG) in front of your host IP and use your own (sub)domain to reach your MusicBrainz mirror on port 80 (HTTP) or 443 (HTTPS)
 
 ## Notes
 
