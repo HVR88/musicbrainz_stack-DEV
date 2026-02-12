@@ -362,12 +362,12 @@ jobs:
           if [ -f local/network.override.yml ]; then
             cp local/network.override.yml deploy-out/local/
           else
-            cat > deploy-out/local/network.override.yml <<'EOF'
-          # Description: Network override (generated)
-          networks:
-            default:
-              driver: bridge
-          EOF
+            printf '%s\n' \
+              '# Description: Network override (generated)' \
+              'networks:' \
+              '  default:' \
+              '    driver: bridge' \
+              > deploy-out/local/network.override.yml
           fi
           cp build/solr/scripts/bootstrap-indexes.sh deploy-out/build/solr/scripts/
           cp .env deploy-out/.env
@@ -431,12 +431,12 @@ jobs:
         working-directory: deploy
         run: |
           set -e
-          if [ -z \"$(git status --porcelain)\" ]; then
-            echo \"No deploy changes to publish.\"
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No deploy changes to publish."
             exit 0
           fi
-          git config user.name \"github-actions[bot]\"
-          git config user.email \"github-actions[bot]@users.noreply.github.com\"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m \"Publish deploy files from ${GITHUB_REPOSITORY}@${GITHUB_SHA}\"
+          git commit -m "Publish deploy files from ${GITHUB_REPOSITORY}@${GITHUB_SHA}"
           git push
