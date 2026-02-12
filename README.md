@@ -2,7 +2,7 @@
   <img src="https://raw.githubusercontent.com/HVR88/LM-Bridge-DEV/main/assets/lmbridge-icon.png" alt="LM Bridge" width="250" />
 </p>
 
-# MusicBrainz Mirror Server PLUS (MBMS DEV)
+# MusicBrainz Mirror Server PLUS (Development Branch)
 
 This repo contains a streamlined, automation-first wrapper around the official MusicBrainz Docker stack plus a custom Lidarr/MusicBrainz API bridge. It keeps the modern multi-service architecture (Postgres, Solr, SIR, RabbitMQ, Redis) but removes the multi-step manual setup by adding bootstrap and scheduling services.
 

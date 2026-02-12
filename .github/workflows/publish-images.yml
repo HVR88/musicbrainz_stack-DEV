@@ -53,7 +53,7 @@ jobs:
 
           MBMS_VERSION=$(cat VERSION)
           echo "MBMS_VERSION=$MBMS_VERSION" >> "$GITHUB_ENV"
-          MBMS_TAG_VERSION=$(python3 - <<'PY'
+          python3 - <<'PY' >> "$GITHUB_ENV"
           import re
           from pathlib import Path
 
@@ -63,11 +63,11 @@ jobs:
             raise SystemExit(f"VERSION format invalid: {version!r}")
           major, minor, release, build = map(int, m.groups())
           if build == 0:
-            print(f"{major}.{minor}.{release}")
+            tag = f"{major}.{minor}.{release}"
           else:
-            print(f"{major}.{minor}.{release}.{build:03d}")
-          PY)
-          echo "MBMS_TAG_VERSION=$MBMS_TAG_VERSION" >> "$GITHUB_ENV"
+            tag = f"{major}.{minor}.{release}.{build:03d}"
+          print(f"MBMS_TAG_VERSION={tag}")
+          PY
 
           echo "POSTGRES_VERSION=$POSTGRES_VERSION" >> "$GITHUB_ENV"
           echo "MB_SOLR_VERSION=$MB_SOLR_VERSION" >> "$GITHUB_ENV"
@@ -216,7 +216,7 @@ jobs:
           set -e
           MBMS_VERSION=$(cat VERSION)
           echo "MBMS_VERSION=$MBMS_VERSION" >> "$GITHUB_ENV"
-          MBMS_TAG_VERSION=$(python3 - <<'PY'
+          python3 - <<'PY' >> "$GITHUB_ENV"
           import re
           from pathlib import Path
 
@@ -226,11 +226,11 @@ jobs:
             raise SystemExit(f"VERSION format invalid: {version!r}")
           major, minor, release, build = map(int, m.groups())
           if build == 0:
-            print(f"{major}.{minor}.{release}")
+            tag = f"{major}.{minor}.{release}"
           else:
-            print(f"{major}.{minor}.{release}.{build:03d}")
-          PY)
-          echo "MBMS_TAG_VERSION=$MBMS_TAG_VERSION" >> "$GITHUB_ENV"
+            tag = f"{major}.{minor}.{release}.{build:03d}"
+          print(f"MBMS_TAG_VERSION={tag}")
+          PY
           SIR_VERSION=$(sed -n 's/^ARG SIR_VERSION=//p' build/sir/Dockerfile)
           RABBITMQ_VERSION=$(sed -n 's/^ARG RABBITMQ_VERSION=//p' build/rabbitmq/Dockerfile)
           RABBITMQ_VARIANT=$(sed -n 's/^ARG RABBITMQ_VARIANT=//p' build/rabbitmq/Dockerfile)
