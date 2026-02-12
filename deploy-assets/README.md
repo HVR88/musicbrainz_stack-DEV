@@ -6,6 +6,10 @@
 
 **_MusicBrainz Mirror Server PLUS - Full stack with Lidarr API Bridge_**
 
+_The initial "compose up" will start a 3.5GB download, with the full installation after setup needing an additional 300GB. **This setup takes at least a few hours.**_
+
+It's recommended you install onto a volume with at least 500GB free to allow for future replication and updates.
+
 ## Quick start
 
 ### 1. Register for MusicBrainz access
@@ -13,7 +17,7 @@
 - Create an account at https://MusicBrainz.com
 - Get your _Live Data Feed Access Token_ from Metabrainz https://metabrainz.org/profile
 
-### 2. Download the MBMS_PLUS project
+### 2. Download the MBMS_PLUS project (small/quick)
 
 ```
 mkdir -p /opt/docker/
