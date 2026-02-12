@@ -462,7 +462,7 @@ jobs:
           release += 1
           build = 0
           new_version = f"{major}.{minor}.{release}.{build}"
-          path.write_text(new_version + "\\n")
+          path.write_text(new_version + "\n")
           print(new_version)
           PY
 
