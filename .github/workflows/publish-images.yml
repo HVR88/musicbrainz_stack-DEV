@@ -65,7 +65,7 @@ jobs:
           if build == 0:
             tag = f"{major}.{minor}.{release}"
           else:
-            tag = f"{major}.{minor}.{release}.{build:03d}"
+            tag = f"{major}.{minor}.{release}.{build}"
           print(f"MBMS_TAG_VERSION={tag}")
           PY
 
@@ -228,7 +228,7 @@ jobs:
           if build == 0:
             tag = f"{major}.{minor}.{release}"
           else:
-            tag = f"{major}.{minor}.{release}.{build:03d}"
+            tag = f"{major}.{minor}.{release}.{build}"
           print(f"MBMS_TAG_VERSION={tag}")
           PY
           SIR_VERSION=$(sed -n 's/^ARG SIR_VERSION=//p' build/sir/Dockerfile)
@@ -357,7 +357,7 @@ jobs:
           major, minor, release, build = map(int, m.groups())
           release += 1
           build = 0
-          new_version = f"{major}.{minor}.{release}.{build:03d}"
+          new_version = f"{major}.{minor}.{release}.{build}"
           path.write_text(new_version + "\n")
           print(new_version)
           PY
@@ -373,7 +373,7 @@ jobs:
           if build == 0:
             print(f"{major}.{minor}.{release}")
           else:
-            print(f"{major}.{minor}.{release}.{build:03d}")
+            print(f"{major}.{minor}.{release}.{build}")
           PY)
           git add VERSION
           if ! git diff --cached --quiet; then
@@ -439,7 +439,7 @@ jobs:
           major, minor, release, build = map(int, m.groups())
           release += 1
           build = 0
-          new_version = f"{major}.{minor}.{release}.{build:03d}"
+          new_version = f"{major}.{minor}.{release}.{build}"
           path.write_text(new_version + "\\n")
           print(new_version)
           PY

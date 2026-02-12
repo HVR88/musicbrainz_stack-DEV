@@ -38,7 +38,7 @@ jobs:
           if build > 999:
             patch += 1
             build = 0
-          new_version = f"{major}.{minor}.{patch}.{build:03d}"
+          new_version = f"{major}.{minor}.{patch}.{build}"
           path.write_text(new_version + "\n")
           print(new_version)
           PY
