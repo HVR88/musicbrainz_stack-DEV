@@ -106,50 +106,10 @@ if [[ $TARGET != sample &&
 	! -a  "$SEARCH_DUMP_DIR/.for-non-commercial-use"
 ]]
 then
-	prompt=$(cat <<-EOQ
-		The data you are about to download is provided by the MetaBrainz Foundation.
-		Are you planning to use this data for commercial or business purposes?
-		(y/n)
-	EOQ
-	)
-	read -e -p "$prompt " -r
-	while [[ ! ${REPLY:0:1} =~ [YNyn] ]]
-	do
-		read -e -p "Invalid reply. Yes or no? " -r
-	done
-	echo
-	if [[ ${REPLY:0:1} =~ [Yy] ]]
-	then
-		prompt=$(cat <<-EOQ
-			The MetaBrainz Foundation is supported by commercial users of our data and
-			through end-user donations. If you are using our data in a commercial context,
-			we require you to support MetaBrainz financially in order for us ensure the
-			availability of these datasets in the future.
-			
-			Please sign up at https://metabrainz.org/supporters/account-type
-			
-			[Press any key when OK]
-		EOQ
-		)
-		read -e -N 1 -p "$prompt" -r -s
-		echo OK
-		touch "$DB_DUMP_DIR/.for-commercial-use"
-	else
-		prompt=$(cat <<-EOQ
-			Could you please sign up at https://metabrainz.org/supporters/account-type
-			(for free!) so that we may better understand how our data is being used?
-			
-			We also encourage our non-commercial users who can afford it to make a donation
-			to the MetaBrainz Foundation so that we may continue our mission:
-			https://metabrainz.org/donate
-			
-			[Press any key when OK]
-		EOQ
-		)
-		read -e -N 1 -p "$prompt" -r -s
-		echo OK
-		touch "$DB_DUMP_DIR/.for-non-commercial-use"
-	fi
+	echo "Non-commercial use assumed; creating marker file." >&2
+	mkdir -p "$DB_DUMP_DIR" "$SEARCH_DUMP_DIR"
+	touch "$DB_DUMP_DIR/.for-non-commercial-use"
+	touch "$SEARCH_DUMP_DIR/.for-non-commercial-use"
 fi
 
 # Keep support for (deprecated) FTP option (which still takes precedence)

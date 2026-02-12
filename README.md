@@ -10,6 +10,10 @@ This repo contains a streamlined, automation-first wrapper around the official M
 >
 > **To deploy pre-built docker containers, clone production repo: https://github.com/HVR88/MBMS_PLUS**
 
+> [!WARNING]
+>
+> This container stack is exclusively for personal use. **ABSOLUTELY NO COMMERCIAL NOR BUSINESS USE IS AUTHORIZED.**
+
 ## Highlights
 
 - One-command bring-up with automatic database import
@@ -152,10 +156,9 @@ admin/bootstrap reset
 
 ## Publishing images
 
-GitHub Actions builds and publishes images on push to `master`:
+GitHub Actions builds and publishes images when triggered manually:
 
-- GHCR: `ghcr.io/<owner>/<repo>/<service>`
-- Docker Hub (optional): `docker.io/<username>/musicbrainz-docker/<service>`
+- Docker Hub: `docker.io/<username>/musicbrainz-docker/<service>`
 
 To enable Docker Hub publishing, set repository secrets:
 
