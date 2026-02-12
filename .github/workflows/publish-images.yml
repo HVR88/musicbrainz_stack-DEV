@@ -449,6 +449,8 @@ jobs:
         run: |
           set -e
           VERSION=$(cat VERSION)
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch --tags
           TAG="release-${VERSION}"
           if git rev-parse "$TAG" >/dev/null 2>&1; then
