@@ -29,13 +29,16 @@ jobs:
 
           path = Path('VERSION')
           version = path.read_text().strip()
-          m = re.fullmatch(r'(\d+)\.(\d+)\.(\d+)\.(\d+)', version)
+          m = re.fullmatch(r'(\d+)\.(\d+)\.(\d+)\.(\d{1,3})', version)
           if not m:
             raise SystemExit(f"VERSION format invalid: {version!r}")
 
           major, minor, patch, build = map(int, m.groups())
           build += 1
-          new_version = f"{major}.{minor}.{patch}.{build}"
+          if build > 999:
+            patch += 1
+            build = 0
+          new_version = f"{major}.{minor}.{patch}.{build:03d}"
           path.write_text(new_version + "\n")
           print(new_version)
           PY
