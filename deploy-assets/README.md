@@ -6,9 +6,9 @@
 
 **_MusicBrainz Mirror Server PLUS - Full stack with Lidarr API Bridge_**
 
-The initial "compose up" will start with a 3.5GB download, and the full installation during and after setup needs an additional 300GB and a few hours to run.
+The initial "compose up" will start with a 3.5GB download and the full installation, during and after setup, needs an additional 300GB and a few hours to run.
 
-_It's recommended to install onto a volume with at least 500GB free to allow for future replication and updates._
+_To allow for future replication and updates, it's recommended to install onto a volume with at least 400-500GB of available storage space._
 
 > [!TIP]
 >
