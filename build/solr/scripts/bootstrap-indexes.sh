@@ -75,12 +75,12 @@ if command -v solr >/dev/null 2>&1; then
   if command -v curl >/dev/null 2>&1; then
     if ! curl -fsS http://localhost:8983/solr/admin/info/system >/dev/null 2>&1; then
       log "Starting temporary Solr instance for bootstrap."
-      solr start -p 8983
+      solr start -c -p 8983 -s "$SOLR_HOME_DIR"
       SOLR_STARTED=1
     fi
   else
     log "curl not found; starting temporary Solr instance for bootstrap."
-    solr start -p 8983
+    solr start -c -p 8983 -s "$SOLR_HOME_DIR"
     SOLR_STARTED=1
   fi
 fi
