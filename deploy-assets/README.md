@@ -16,10 +16,11 @@
 - 300 GB of available storage (400-500 GB recommended)
 - 8 GB of memory availbale to the container
 - 2-4 hours installation time
+- MusicBrainz account and Data Feed access token
 
 ## Quick start
 
-### 1. Register for MusicBrainz access (REQUIRED)
+### 1. Register for MusicBrainz access
 
 - Create an account at https://MusicBrainz.com
 - Get your _Live Data Feed Access Token_ from Metabrainz https://metabrainz.org/profile
@@ -33,12 +34,12 @@ git clone https://github.com/HVR88/MBMS_PLUS.git
 cd /opt/docker/MBMS_PLUS
 ```
 
-### 3. Minimally Configure .env file (REQUIRED)
+### 3. Minimally Configure .env file
 
 Edit `.env` (top section) before first run:
 
-- Uncomment `COMPOSE_PROFILES=mbms`
-- `MUSICBRAINZ_REPLICATION_TOKEN` (required for replication)
+- **Uncomment `COMPOSE_PROFILES=mbms`**
+- **`MUSICBRAINZ_REPLICATION_TOKEN` (required for replication)**
 - `MUSICBRAINZ_WEB_SERVER_HOST` ('localhost' default, edit as needed)
 - `MUSICBRAINZ_WEB_SERVER_PORT` ('5000' default, edit as needed)
 - Optional provider keys/tokens for LM-Bridge (Cover Art Archive/Fanart/Last.FM)
