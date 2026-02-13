@@ -52,13 +52,13 @@ docker compose up -d
 
 ## Wrap-up
 
-You can monitor the progress of the long compose jobs:
+You can monitor the progress of the long compose jobs from another terminal:
 
 ```
 docker compose logs -f --timestamps
 ```
 
-Or with less "noise"
+Or with less "noise:"
 
 ```
 docker compose logs -f --no-log-prefix --tail=200 \
@@ -66,7 +66,7 @@ docker compose logs -f --no-log-prefix --tail=200 \
 
 ```
 
-When finished, your MusicBrainz mirror will be available at **http://HOST_IP_Address:5000**
+When finished, your MusicBrainz mirror will be available at **http://HOST_IP:5000**
 <br>The Lidarr API bridge will accept connections at the same address on port 5001
 
 > [!TIP]
@@ -76,13 +76,13 @@ When finished, your MusicBrainz mirror will be available at **http://HOST_IP_Add
 ## Notes
 
 - _The first import and database setup will take multiple hours and requires up to 300GB of available storage_
-- Building Materialized/denormalized tables adds additioonal GB of storage but offers significant performance improvements
+- Building Materialized/denormalized tables consumes additioonal storage but offers significant performance improvements
 - 60GB of pre-built search indexes are downloaded to save a significant amount of time building new indexes
-- This stack is intended for private use on a LAN behind a firewall; don't expose services publicly without hardening
+- This stack is configured for private use on a LAN behind a firewall; don't expose services publicly without hardening
 
 > [!INFORMATION]
 >
-> This container stack is exclusively for personal use. **NO COMMERCIAL OR BUSINESS USE IS PERMITTED.**
+> MBMS PLUS is for personal use: **NO COMMERCIAL OR BUSINESS USE IS PERMITTED.**
 
 ### Source code, licenses and development repo:
 
