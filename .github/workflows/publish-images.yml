@@ -433,6 +433,10 @@ jobs:
       - name: Bump minor and reset build
         run: |
           set -e
+          BRANCH="${GITHUB_REF_NAME:-master}"
+          git fetch origin "$BRANCH"
+          git rebase "origin/$BRANCH"
+
           python3 - <<'PY'
           import re
           from pathlib import Path
