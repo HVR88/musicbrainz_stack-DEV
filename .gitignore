@@ -13,3 +13,4 @@
 # Installed node module 'markdown-toc' used to generate TOC in README.md
 /node_modules/
 /package-lock.json
+.DS_Store
