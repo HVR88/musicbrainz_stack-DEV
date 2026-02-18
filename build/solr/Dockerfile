@@ -4,5 +4,4 @@ FROM metabrainz/mb-solr:${MB_SOLR_VERSION}
 ARG MB_SOLR_VERSION
 LABEL org.metabrainz.based-on-image="metabrainz/mb-solr:${MB_SOLR_VERSION}"
 
-COPY scripts/bootstrap-indexes.sh /usr/local/bin/bootstrap-indexes.sh
-RUN chmod 0755 /usr/local/bin/bootstrap-indexes.sh
+COPY --chmod=0755 scripts/bootstrap-indexes.sh /usr/local/bin/bootstrap-indexes.sh
