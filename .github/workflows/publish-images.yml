@@ -265,12 +265,6 @@ jobs:
           print(f"MBMS_TAG_VERSION={tag}")
           print(f"MBMS_VERSION_FULL={version}")
           PY
-          SIR_VERSION=$(sed -n 's/^ARG SIR_VERSION=//p' build/sir/Dockerfile)
-          RABBITMQ_VERSION=$(sed -n 's/^ARG RABBITMQ_VERSION=//p' build/rabbitmq/Dockerfile)
-          RABBITMQ_VARIANT=$(sed -n 's/^ARG RABBITMQ_VARIANT=//p' build/rabbitmq/Dockerfile)
-          RABBITMQ_TAG="${RABBITMQ_VERSION}${RABBITMQ_VARIANT}"
-          echo "SIR_VERSION=$SIR_VERSION" >> "$GITHUB_ENV"
-          echo "RABBITMQ_TAG=$RABBITMQ_TAG" >> "$GITHUB_ENV"
 
       - name: Checkout deploy repo
         uses: actions/checkout@v4
@@ -288,7 +282,7 @@ jobs:
           cp deploy-assets/docker-compose.yml deploy-out/docker-compose.yml
           cp deploy-assets/README.md deploy-out/README.md
           cp deploy-assets/example.env deploy-out/example.env
-          echo "$MBMS_TAG_VERSION" > deploy-out/VERSION
+          echo "$MBMS_VERSION_FULL" > deploy-out/VERSION
 
           python3 - <<'PY'
           from __future__ import annotations
@@ -314,11 +308,8 @@ jobs:
               out.append(prefix + value)
             return out
 
-          lines = upsert(lines, "MBMS_PLUS_VERSION", os.environ["MBMS_TAG_VERSION"])
           lines = upsert(lines, "MBMS_DOCKERHUB_NAMESPACE", "espressomatic")
           lines = upsert(lines, "MBMS_DOCKERHUB_REPO_PREFIX", "mbms-plus")
-          lines = upsert(lines, "SIR_VERSION", os.environ["SIR_VERSION"])
-          lines = upsert(lines, "RABBITMQ_TAG", os.environ["RABBITMQ_TAG"])
 
           env_path.write_text("\n".join(lines).rstrip() + "\n")
           PY
