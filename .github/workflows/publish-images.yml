@@ -292,7 +292,7 @@ jobs:
               > deploy-out/default/network.override.yml
           fi
           cp build/solr/scripts/bootstrap-indexes.sh deploy-out/build/solr/scripts/
-          cp .env deploy-out/.env
+          cp example.env deploy-out/example.env
 
           python3 - <<'PY'
           from __future__ import annotations
@@ -300,7 +300,7 @@ jobs:
           import os
           from pathlib import Path
 
-          env_path = Path("deploy-out/.env")
+          env_path = Path("deploy-out/example.env")
           text = env_path.read_text()
           lines = text.splitlines()
 

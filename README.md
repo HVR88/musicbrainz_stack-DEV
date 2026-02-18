@@ -28,7 +28,11 @@ This repo contains a streamlined, automation-first wrapper around the official M
 0. Get your Live Data Feed Access Token from Metabrainz first
    https://metabrainz.org/profile
 
-1. Edit `.env` (included in this repo) to match your environment. Uncomment `COMPOSE_PROFILES=mbms`.
+1. Copy `example.env` to `.env`, then edit it to match your environment. Uncomment `COMPOSE_PROFILES=mbms`.
+
+```bash
+cp example.env .env
+```
 
 2. Start everything (bootstrap + services):
 
@@ -146,7 +150,7 @@ admin/bootstrap reset
 
 ## Helper scripts
 
-- `admin/first-run` – create `.env` from `.env.example`
+- `admin/first-run` – create `.env` from `example.env`
 - `admin/validate-env` – validate key env values
 - `admin/preflight` – first-run + validate + `docker compose config`
 - `admin/bootstrap` – enable/disable/reset bootstrap override
