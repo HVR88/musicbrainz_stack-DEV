@@ -1,4 +1,7 @@
 # Description: LM-Bridge (internal-only) using prebuilt image
+volumes:
+  lmbridge_init_state:
+    driver: local
 
 services:
   lmbridge-init:
@@ -31,6 +34,7 @@ services:
       - "${LMBRIDGE_PORT:-5001}:5001"
     volumes:
       - ./VERSION:/mbms/VERSION:ro
+      - lmbridge_init_state:/metadata/init-state
     environment:
       TZ: ${TZ:-America/Toronto}
       # --- General ---
