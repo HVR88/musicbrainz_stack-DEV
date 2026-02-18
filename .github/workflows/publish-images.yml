@@ -277,7 +277,7 @@ jobs:
 
           cp docker-compose.yml deploy-out/
           cp deploy-assets/README.md deploy-out/README.md
-          echo "$MBMS_VERSION_FULL" > deploy-out/VERSION
+          echo "$MBMS_TAG_VERSION" > deploy-out/VERSION
           cp compose/bootstrap.yml compose/indexing-cron.yml compose/lm-bridge.yml compose/dockerhub-images.yml deploy-out/compose/
           cp default/postgres.env default/indexer.ini deploy-out/default/
           cp -R deploy-assets/admin/. deploy-out/admin/
