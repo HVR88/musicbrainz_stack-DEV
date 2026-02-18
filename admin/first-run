@@ -6,7 +6,7 @@ set -e -u
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.inc.bash"
 
 ENV_FILE="$MB_DOCKER_ROOT/.env"
-EXAMPLE_FILE="$MB_DOCKER_ROOT/.env.example"
+EXAMPLE_FILE="$MB_DOCKER_ROOT/example.env"
 
 if [ -f "$ENV_FILE" ]; then
   echo ".env already exists."
@@ -15,11 +15,11 @@ fi
 
 if [ -f "$EXAMPLE_FILE" ]; then
   cp "$EXAMPLE_FILE" "$ENV_FILE"
-  echo "Created .env from .env.example"
+  echo "Created .env from example.env"
   exit 0
 fi
 
-echo >&2 "No .env and no local/.env.example found."
+echo >&2 "No .env and no example.env found."
 exit 1
 
 admin/validate-env
