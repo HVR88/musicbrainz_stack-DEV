@@ -5,4 +5,18 @@ set -euo pipefail
 # shellcheck source=deploy-assets/admin/_common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/_common.sh"
 
+LOCK_FILE="$(dirname "${BASH_SOURCE[0]}")/replication.pid"
+
+if [[ -f "$LOCK_FILE" ]]; then
+  if kill -0 "$(cat "$LOCK_FILE")" 2>/dev/null; then
+    echo "Replication already running (pid $(cat "$LOCK_FILE"))."
+    exit 0
+  else
+    rm -f "$LOCK_FILE"
+  fi
+fi
+
+echo $$ > "$LOCK_FILE"
+trap 'rm -f "$LOCK_FILE"' EXIT INT TERM
+
 dc exec -T musicbrainz replication.sh
