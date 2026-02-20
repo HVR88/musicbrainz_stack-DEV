@@ -55,6 +55,7 @@ RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.asc] https://deb.nodesourc
         # Needed for Unicode::ICU::Collator
         pkg-config \
         postgresql-client-${POSTGRES_VERSION} \
+        python3 \
         python2-minimal \
         # Needed to decompress sample data
         xz-utils \
@@ -122,6 +123,8 @@ RUN install -m 0755 \
     admin/replication/hooks/post-process
 COPY DBDefs.pm /musicbrainz-server/lib/
 COPY scripts/* /usr/local/bin/
+COPY mbms-admin/ /opt/mbms-admin/
+RUN chmod +x /opt/mbms-admin/start-mbms-admin.sh /opt/mbms-admin/listener.py
 RUN cat /usr/local/bin/snippet.perllocallib.bashrc >> ~/.bashrc && \
     rm /usr/local/bin/snippet.perllocallib.bashrc && \
     ln -s /usr/local/bin/docker-entrypoint.sh /

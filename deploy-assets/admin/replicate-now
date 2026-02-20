@@ -1,23 +1,8 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -e -u
 
-# shellcheck source=deploy-assets/admin/_common.sh
-source "$(dirname "${BASH_SOURCE[0]}")/_common.sh"
+# shellcheck source=admin/lib/common.inc.bash
+source "$(dirname "${BASH_SOURCE[0]}")/lib/common.inc.bash"
 
-LOCK_FILE="${LMBRIDGE_REPLICATION_STATUS_FILE:-/metadata/init-state/replication.pid}"
-mkdir -p "$(dirname "$LOCK_FILE")"
-
-if [[ -f "$LOCK_FILE" ]]; then
-  if kill -0 "$(cat "$LOCK_FILE")" 2>/dev/null; then
-    echo "Replication already running (pid $(cat "$LOCK_FILE"))."
-    exit 0
-  else
-    rm -f "$LOCK_FILE"
-  fi
-fi
-
-echo $$ > "$LOCK_FILE"
-trap 'rm -f "$LOCK_FILE"' EXIT INT TERM
-
-dc exec -T musicbrainz replication.sh
+${DOCKER_COMPOSE_CMD} exec -T musicbrainz replication.sh

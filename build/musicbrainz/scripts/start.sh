@@ -48,4 +48,8 @@ EOF
   fi
 fi
 
+if [ -x /opt/mbms-admin/start-mbms-admin.sh ]; then
+  /opt/mbms-admin/start-mbms-admin.sh
+fi
+
 carton exec -- start_server --port=5000 -- plackup -I lib -s Starlet -E deployment --max-workers ${MUSICBRAINZ_SERVER_PROCESSES} --pid fcgi.pid
