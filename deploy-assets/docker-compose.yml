@@ -18,7 +18,7 @@ volumes:
     driver: local
   solrdump:
     driver: local
-  lmbridge_init_state:
+  limbo_init_state:
     driver: local
 
 services:
@@ -221,7 +221,7 @@ services:
       - MBMS_ADMIN_HOST=${MBMS_ADMIN_HOST:-0.0.0.0}
       - MBMS_ADMIN_PORT=${MBMS_ADMIN_PORT:-8099}
       - MBMS_ADMIN_HEADER=${MBMS_ADMIN_HEADER:-X-MBMS-Key}
-      - MBMS_ADMIN_NOTIFY_URL=${MBMS_ADMIN_NOTIFY_URL:-http://lmbridge:5001/replication/notify}
+      - MBMS_ADMIN_NOTIFY_URL=${MBMS_ADMIN_NOTIFY_URL:-http://limbo:5001/replication/notify}
       - MBMS_ADMIN_NOTIFY_HEADER=${MBMS_ADMIN_NOTIFY_HEADER:-X-MBMS-Key}
       - MBMS_ADMIN_NOTIFY_KEY=${MBMS_ADMIN_NOTIFY_KEY:-}
       - MBMS_ADMIN_NOTIFY_TIMEOUT=${MBMS_ADMIN_NOTIFY_TIMEOUT:-5}
@@ -291,9 +291,9 @@ services:
       search:
         condition: service_started
 
-  lmbridge-init:
+  limbo-init:
     profiles: ["mbms"]
-    image: ${LMBRIDGE_IMAGE:-espressomatic/lm-bridge:latest}
+    image: ${LIMBO_IMAGE:-espressomatic/limbo:latest}
     pull_policy: always
     entrypoint: ["/bin/bash", "/metadata/init/init-mbdb.sh"]
     environment:
@@ -303,9 +303,9 @@ services:
       MB_DB_USER: ${MB_DB_USER:-musicbrainz}
       MB_DB_PASSWORD: ${MB_DB_PASSWORD:-musicbrainz}
       MB_DB_NAME: ${MB_DB_NAME:-musicbrainz_db}
-      LMBRIDGE_CACHE_DB: ${LMBRIDGE_CACHE_DB:-lm_cache_db}
-      LMBRIDGE_CACHE_USER: ${LMBRIDGE_CACHE_USER:-lidarr}
-      LMBRIDGE_CACHE_PASSWORD: ${LMBRIDGE_CACHE_PASSWORD:-lidarr}
+      LIMBO_CACHE_DB: ${LIMBO_CACHE_DB:-lm_cache_db}
+      LIMBO_CACHE_USER: ${LIMBO_CACHE_USER:-lidarr}
+      LIMBO_CACHE_PASSWORD: ${LIMBO_CACHE_PASSWORD:-lidarr}
     restart: "no"
     depends_on:
       <<: *assets_depends
@@ -314,14 +314,14 @@ services:
       bootstrap:
         condition: service_completed_successfully
 
-  lmbridge:
+  limbo:
     profiles: ["mbms"]
-    image: ${LMBRIDGE_IMAGE:-espressomatic/lm-bridge:latest}
+    image: ${LIMBO_IMAGE:-espressomatic/limbo:latest}
     pull_policy: always
     ports:
-      - "${LMBRIDGE_PORT:-5001}:5001"
+      - "${LIMBO_PORT:-5001}:5001"
     volumes:
-      - lmbridge_init_state:/metadata/init-state
+      - limbo_init_state:/metadata/init-state
       - ./.mbms/assets/MBMS_TAG_VERSION:/mbms/VERSION:ro
     env_file:
       - .env
@@ -360,10 +360,10 @@ services:
       PROVIDERS__MUSICBRAINZDBPROVIDER__1__DB_PASSWORD: "${MB_DB_PASSWORD:-musicbrainz}"
 
       # --- Postgres cache (lm_cache_db) ---
-      POSTGRES_CACHE_HOST: "${LMBRIDGE_CACHE_HOST:-db}"
-      POSTGRES_CACHE_PORT: "${LMBRIDGE_CACHE_PORT:-5432}"
-      POSTGRES_CACHE_USER: "${LMBRIDGE_CACHE_USER:-lmbridge}"
-      POSTGRES_CACHE_PASSWORD: "${LMBRIDGE_CACHE_PASSWORD:-lmbridge}"
+      POSTGRES_CACHE_HOST: "${LIMBO_CACHE_HOST:-db}"
+      POSTGRES_CACHE_PORT: "${LIMBO_CACHE_PORT:-5432}"
+      POSTGRES_CACHE_USER: "${LIMBO_CACHE_USER:-limbo}"
+      POSTGRES_CACHE_PASSWORD: "${LIMBO_CACHE_PASSWORD:-limbo}"
 
       # --- External providers (fill in later) ---
       FANART_KEY: "${FANART_KEY:-}"
@@ -376,7 +376,7 @@ services:
     restart: unless-stopped
     depends_on:
       <<: *assets_depends
-      lmbridge-init:
+      limbo-init:
         condition: service_completed_successfully
       db:
         condition: service_started

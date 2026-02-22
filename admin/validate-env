@@ -92,7 +92,7 @@ case "$network_type" in
       || [ -n "${MUSICBRAINZ_NETWORK_IP_RANGE:-}" ] \
       || [ -n "${MUSICBRAINZ_NETWORK_IP:-}" ] \
       || [ -n "${MUSICBRAINZ_IPVLAN_MODE:-}" ] \
-      || [ -n "${LMBRIDGE_NETWORK_IP:-}" ]; then
+      || [ -n "${LIMBO_NETWORK_IP:-}" ]; then
       echo >&2 "Network values are set but MUSICBRAINZ_NETWORK_TYPE is bridge."
       echo >&2 "Clear them or set MUSICBRAINZ_NETWORK_TYPE to macvlan or ipvlan."
       ok=0
@@ -135,8 +135,8 @@ case "$network_type" in
       ok=0
     fi
 
-    if [ -n "${LMBRIDGE_NETWORK_IP:-}" ] && ! is_ipv4 "${LMBRIDGE_NETWORK_IP:-}"; then
-      echo >&2 "LMBRIDGE_NETWORK_IP must be an IPv4 address (got '${LMBRIDGE_NETWORK_IP:-}')."
+    if [ -n "${LIMBO_NETWORK_IP:-}" ] && ! is_ipv4 "${LIMBO_NETWORK_IP:-}"; then
+      echo >&2 "LIMBO_NETWORK_IP must be an IPv4 address (got '${LIMBO_NETWORK_IP:-}')."
       ok=0
     fi
 

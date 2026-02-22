@@ -19,9 +19,9 @@ source "$ENV_FILE"
 network_type="${MUSICBRAINZ_NETWORK_TYPE:-bridge}"
 network_type="${network_type,,}"
 compose_file="${COMPOSE_FILE:-}"
-lmbridge_enabled=0
-if [[ "$compose_file" == *"compose/lm-bridge.yml"* ]]; then
-  lmbridge_enabled=1
+limbo_enabled=0
+if [[ "$compose_file" == *"compose/limbo.yml"* ]]; then
+  limbo_enabled=1
 fi
 
 mkdir -p "$MB_DOCKER_ROOT/default"
@@ -82,13 +82,13 @@ EOF
         echo "      lan: {}"
       fi
 
-      if [ "$lmbridge_enabled" -eq 1 ]; then
-        echo "  lmbridge:"
+      if [ "$limbo_enabled" -eq 1 ]; then
+        echo "  limbo:"
         echo "    networks:"
         echo "      default: {}"
-        if [ -n "${LMBRIDGE_NETWORK_IP:-}" ]; then
+        if [ -n "${LIMBO_NETWORK_IP:-}" ]; then
           echo "      lan:"
-          echo "        ipv4_address: ${LMBRIDGE_NETWORK_IP}"
+          echo "        ipv4_address: ${LIMBO_NETWORK_IP}"
         else
           echo "      lan: {}"
         fi

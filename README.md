@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/HVR88/LM-Bridge-DEV/main/assets/lmbridge-icon.png" alt="LM Bridge" width="250" />
+  <img src="https://raw.githubusercontent.com/HVR88/Limbo-DEV/main/assets/limbo-icon.png" alt="Limbo" width="250" />
 </p>
 
 # MusicBrainz Mirror Server PLUS (Development Branch)
@@ -68,29 +68,29 @@ Common settings:
 - `POSTGRES_SHARED_BUFFERS`
 - `POSTGRES_SHM_SIZE`
 - `SOLR_HEAP`
-- `LMBRIDGE_IMAGE` (LM-Bridge)
-- `LMBRIDGE_PORT` (LM-Bridge)
-- `LMBRIDGE_NETWORK_IP` (LM-Bridge, macvlan/ipvlan only)
+- `LIMBO_IMAGE` (Limbo)
+- `LIMBO_PORT` (Limbo)
+- `LIMBO_NETWORK_IP` (Limbo, macvlan/ipvlan only)
 
 Advanced settings are below the divider in `.env` and generally do not need changes.
 
-## LM-Bridge (optional)
+## Limbo (optional)
 
-LM-Bridge is included by default via `compose/lm-bridge.yml` and exposes port `5001`.
+Limbo is included by default via `compose/limbo.yml` and exposes port `5001`.
 It runs on the internal network and connects to the existing `db`, `search`, and
 `redis` services.
 
-When `MUSICBRAINZ_NETWORK_TYPE` is `macvlan` or `ipvlan`, LM-Bridge is also
-attached to the `lan` network. Set `LMBRIDGE_NETWORK_IP` if you want a static
+When `MUSICBRAINZ_NETWORK_TYPE` is `macvlan` or `ipvlan`, Limbo is also
+attached to the `lan` network. Set `LIMBO_NETWORK_IP` if you want a static
 LAN IP; otherwise Docker will assign one.
 
-To see the assigned IPs for LM-Bridge (including the `lan` network when used):
+To see the assigned IPs for Limbo (including the `lan` network when used):
 
 ```bash
-docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{println $k $v.IPAddress}}{{end}}' $(docker compose ps -q lmbridge)
+docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{println $k $v.IPAddress}}{{end}}' $(docker compose ps -q limbo)
 ```
 
-To disable LM-Bridge, remove `compose/lm-bridge.yml` from `COMPOSE_FILE` in `.env`.
+To disable Limbo, remove `compose/limbo.yml` from `COMPOSE_FILE` in `.env`.
 
 ## Network mode
 

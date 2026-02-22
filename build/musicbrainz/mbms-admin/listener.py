@@ -13,7 +13,7 @@ PORT = int(os.getenv("MBMS_ADMIN_PORT", "8099"))
 KEY = os.getenv("MBMS_ADMIN_KEY", "")
 HEADER = os.getenv("MBMS_ADMIN_HEADER", "X-MBMS-Key")
 NOTIFY_URL = os.getenv(
-    "MBMS_ADMIN_NOTIFY_URL", "http://lmbridge:5001/replication/notify"
+    "MBMS_ADMIN_NOTIFY_URL", "http://limbo:5001/replication/notify"
 ).strip()
 NOTIFY_HEADER = os.getenv("MBMS_ADMIN_NOTIFY_HEADER", "X-MBMS-Key")
 NOTIFY_KEY = os.getenv("MBMS_ADMIN_NOTIFY_KEY", "") or KEY

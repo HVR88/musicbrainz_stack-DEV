@@ -42,7 +42,7 @@ rsync -a --delete --exclude 'admin' "$BUNDLE_ROOT/" "$ASSETS_DIR/"
 cp -f "$BUNDLE_ROOT/example.env" "$OUT_ROOT/example.env"
 cp -f "$BUNDLE_ROOT/docker-compose.yml" "$OUT_ROOT/docker-compose.yml"
 
-# Version marker (3-segment) for LM-Bridge
+# Version marker (3-segment) for Limbo
 mbms_tag_version=$(echo "$bundle_version" | awk -F. '{print $1 "." $2 "." $3}')
 if [ -n "$mbms_tag_version" ]; then
   echo "$mbms_tag_version" > "$ASSETS_DIR/MBMS_TAG_VERSION"
