@@ -7,6 +7,11 @@ on:
         description: "Expected VERSION (must match VERSION file exactly)"
         required: true
         type: string
+      channel:
+        description: "Publish channel (stable|test)"
+        required: true
+        default: "stable"
+        type: string
 
 permissions:
   contents: read
@@ -22,6 +27,7 @@ jobs:
       DOCKERHUB_TOKEN_MBMS: ${{ secrets.DOCKERHUB_TOKEN_MBMS }}
       IMAGE_REGISTRY: docker.io
       IMAGE_REPO_PREFIX: mbms-plus
+      DOCKER_CHANNEL_TAG: ${{ inputs.channel == 'test' && 'test' || 'latest' }}
     strategy:
       fail-fast: false
       matrix:
@@ -49,6 +55,13 @@ jobs:
             dockerfile: build/deploy-assets/Dockerfile
     steps:
       - uses: actions/checkout@v4
+      - name: Validate channel input
+        run: |
+          set -e
+          if [ "${{ inputs.channel }}" != "stable" ] && [ "${{ inputs.channel }}" != "test" ]; then
+            echo "channel must be stable or test." >&2
+            exit 1
+          fi
       - name: Guard expected VERSION
         run: |
           set -e
@@ -192,7 +205,7 @@ jobs:
           esac
 
           TAGS="$IMAGE_REGISTRY/$IMAGE_NAMESPACE/${IMAGE_REPO_PREFIX}-${{ matrix.name }}:$DOCKER_TAG_VERSION"
-          TAGS="$TAGS"$'\n'"$IMAGE_REGISTRY/$IMAGE_NAMESPACE/${IMAGE_REPO_PREFIX}-${{ matrix.name }}:latest"
+          TAGS="$TAGS"$'\n'"$IMAGE_REGISTRY/$IMAGE_NAMESPACE/${IMAGE_REPO_PREFIX}-${{ matrix.name }}:$DOCKER_CHANNEL_TAG"
 
           printf "TAGS<<EOF\n%s\nEOF\n" "$TAGS" >> "$GITHUB_ENV"
           printf "BUILD_ARGS<<EOF\n%s\nEOF\n" "$BUILD_ARGS" >> "$GITHUB_ENV"
@@ -266,8 +279,16 @@ jobs:
     runs-on: ubuntu-latest
     env:
       MBMS_TOKEN: ${{ secrets.MBMS_TOKEN }}
+      DEPLOY_BRANCH: ${{ inputs.channel == 'test' && 'test' || 'main' }}
     steps:
       - uses: actions/checkout@v4
+      - name: Validate channel input
+        run: |
+          set -e
+          if [ "${{ inputs.channel }}" != "stable" ] && [ "${{ inputs.channel }}" != "test" ]; then
+            echo "channel must be stable or test." >&2
+            exit 1
+          fi
       - name: Guard expected VERSION
         run: |
           set -e
@@ -281,7 +302,9 @@ jobs:
       # shellcheck disable=SC1091
         run: |
           set -e
+          CHANNEL="${{ inputs.channel }}"
           python3 - <<'PY' >> "$GITHUB_ENV"
+          import os
           import re
           from pathlib import Path
 
@@ -290,13 +313,19 @@ jobs:
           if not m:
             raise SystemExit(f"VERSION format invalid: {version!r}")
           major, minor, release, build_str = m.groups()
-          build_num = int(build_str) if build_str is not None else 0
-          if build_num == 0:
-            tag = f"{major}.{minor}.{release}"
+          build_str = build_str or "0"
+          version_full = f"{major}.{minor}.{release}.{build_str}"
+          release_version_3 = f"{major}.{minor}.{release}"
+          channel = os.environ.get("CHANNEL", "stable")
+          if channel == "test":
+            tag_version = f"{major}.{minor}.{release}.{build_str}"
+            release_version = tag_version
           else:
-            tag = f"{major}.{minor}.{release}.{build_str}"
-          print(f"MBMS_TAG_VERSION={tag}")
-          print(f"MBMS_VERSION_FULL={version}")
+            tag_version = release_version_3
+            release_version = release_version_3
+          print(f"MBMS_TAG_VERSION={tag_version}")
+          print(f"MBMS_VERSION_FULL={version_full}")
+          print(f"RELEASE_VERSION={release_version}")
           PY
 
       - name: Checkout deploy repo
@@ -304,6 +333,7 @@ jobs:
         with:
           repository: HVR88/MBMS_PLUS
           token: ${{ secrets.MBMS_TOKEN }}
+          ref: ${{ env.DEPLOY_BRANCH }}
           path: deploy
 
       - name: Stage deploy files
@@ -352,6 +382,18 @@ jobs:
           set -e
           rsync -a --delete --exclude .git deploy-out/ deploy/
 
+      - name: Create deploy zip
+        run: |
+          set -e
+          if [ "${{ inputs.channel }}" = "test" ]; then
+            ZIP_NAME="mbms-plus-deploy-test-${RELEASE_VERSION}.zip"
+          else
+            ZIP_NAME="mbms-plus-deploy-${RELEASE_VERSION}.zip"
+          fi
+          rm -f "$ZIP_NAME"
+          (cd deploy-out && zip -r "../$ZIP_NAME" .)
+          echo "DEPLOY_ZIP_NAME=$ZIP_NAME" >> "$GITHUB_ENV"
+
       - name: Commit and push
         working-directory: deploy
         run: |
@@ -363,7 +405,7 @@ jobs:
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git add -A
             git commit -m "Publish deploy files from ${GITHUB_REPOSITORY}@${GITHUB_SHA}"
-            git push
+            git push origin "${DEPLOY_BRANCH}"
           fi
 
       - name: Tag and release deploy repo
@@ -374,22 +416,24 @@ jobs:
           set -e
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          TAG_VERSION="${MBMS_TAG_VERSION}"
-          echo "TAG_VERSION=$TAG_VERSION" >> "$GITHUB_ENV"
-
-          TAG="v${TAG_VERSION}"
-          git fetch --tags
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "Tag $TAG already exists."
+          if [ "${{ inputs.channel }}" = "test" ]; then
+            TAG="test-v${RELEASE_VERSION}"
           else
-            git tag -a "$TAG" -m "MBMS_PLUS ${TAG_VERSION}"
+            TAG="v${RELEASE_VERSION}"
+          fi
+          echo "TAG_VERSION=$TAG" >> "$GITHUB_ENV"
+
+          git fetch --tags
+          if ! git rev-parse "$TAG" >/dev/null 2>&1; then
+            git tag -a "$TAG" -m "MBMS_PLUS ${RELEASE_VERSION}"
             git push origin "$TAG"
           fi
 
           if ! gh release view "$TAG" -R HVR88/MBMS_PLUS >/dev/null 2>&1; then
-            gh release create "$TAG" -R HVR88/MBMS_PLUS -t "MBMS_PLUS ${TAG_VERSION}" -n "Automated deploy release."
+            gh release create "$TAG" -R HVR88/MBMS_PLUS -t "MBMS_PLUS ${RELEASE_VERSION}" -n "Automated deploy release."
           fi
+
+          gh release upload "$TAG" -R HVR88/MBMS_PLUS "../${DEPLOY_ZIP_NAME}" --clobber
 
   release:
     name: Tag Release and Bump Minor
@@ -404,6 +448,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Validate channel input
+        run: |
+          set -e
+          if [ "${{ inputs.channel }}" != "stable" ] && [ "${{ inputs.channel }}" != "test" ]; then
+            echo "channel must be stable or test." >&2
+            exit 1
+          fi
       - name: Guard expected VERSION
         run: |
           set -e
@@ -418,7 +469,9 @@ jobs:
           set -e
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          TAG_VERSION=$(python3 - <<'PY'
+          CHANNEL="${{ inputs.channel }}"
+          RELEASE_VERSION=$(python3 - <<'PY'
+          import os
           import re
           from pathlib import Path
 
@@ -426,15 +479,25 @@ jobs:
           m = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)(?:\.(\d{1,3}))?", version)
           if not m:
             raise SystemExit(f"VERSION format invalid: {version!r}")
-          major, minor, release, _build = map(int, m.groups(default=0))
-          print(f"{major}.{minor}.{release}")
+          major, minor, release, build = m.groups()
+          build = build or "0"
+          release_version_3 = f"{major}.{minor}.{release}"
+          channel = os.environ.get("CHANNEL", "stable")
+          if channel == "test":
+            print(f"{major}.{minor}.{release}.{build}")
+          else:
+            print(release_version_3)
           PY
           )
           git fetch --tags
-          TAG="release-${TAG_VERSION}"
+          if [ "${{ inputs.channel }}" = "test" ]; then
+            TAG="test-v${RELEASE_VERSION}"
+          else
+            TAG="v${RELEASE_VERSION}"
+          fi
           if git rev-parse "$TAG" >/dev/null 2>&1; then
             echo "Tag $TAG already exists."
             exit 0
           fi
-          git tag -a "$TAG" -m "Release $TAG_VERSION"
+          git tag -a "$TAG" -m "Release ${RELEASE_VERSION}"
           git push origin "$TAG"
