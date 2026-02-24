@@ -104,6 +104,14 @@ If you previously cloned the old deploy repo, update your git remote once:
 
 If you were using zip downloads, replace your `docker-compose.yml` and
 `example.env` with the new release assets, then re-apply your `.env` settings.
+Example:
+
+```bash
+mkdir -p /opt/docker/musicbrainz-mbms
+cd /opt/docker/musicbrainz-mbms
+curl -fsSL -o musicbrainz-mbms-latest.zip https://github.com/HVR88/MusicBrainz-MBMS/releases/latest/download/musicbrainz-mbms-1.9.12.zip
+unzip -o musicbrainz-mbms-latest.zip
+```
 
 ## Migration note (volume prefix and upgrade)
 
@@ -116,14 +124,24 @@ You have two options:
 
 1. **Keep using existing `mbms_plus_*` volumes (no migration)**
    - Keep the folder name as `mbms_plus`, **or**
-   - Set `COMPOSE_PROJECT_NAME=mbms_plus` in `.env`.
    - Replace `docker-compose.yml` and `example.env` with the new release assets
      (image names changed to `limbo-*`), then re-apply your `.env` values.
+     Example:
+     ```bash
+     curl -fsSL -o musicbrainz-mbms-latest.zip https://github.com/HVR88/MusicBrainz-MBMS/releases/latest/download/musicbrainz-mbms-1.9.12.zip
+     unzip -o musicbrainz-mbms-latest.zip
+     ```
+   - Set `COMPOSE_PROJECT_NAME=mbms_plus` in `.env`.
 
 2. **Migrate to new `limbo_*` volumes (recommended for new layout)**
    - Set `COMPOSE_PROJECT_NAME=limbo` in `.env`.
    - Replace `docker-compose.yml` and `example.env` with the new release assets
      (image names changed to `limbo-*`), then re-apply your `.env` values.
+     Example:
+     ```bash
+     curl -fsSL -o musicbrainz-mbms-latest.zip https://github.com/HVR88/MusicBrainz-MBMS/releases/latest/download/musicbrainz-mbms-1.9.12.zip
+     unzip -o musicbrainz-mbms-latest.zip
+     ```
    - Run the migration script:
      ```bash
      admin/upgrade-volumes
