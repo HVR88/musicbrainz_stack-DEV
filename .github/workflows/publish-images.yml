@@ -12,6 +12,11 @@ on:
         required: true
         default: "stable"
         type: string
+      deploy_target:
+        description: "Deploy target (limbo|mbms|both)"
+        required: true
+        default: "both"
+        type: string
 
 permissions:
   contents: read
@@ -275,7 +280,7 @@ jobs:
 
   publish-deploy:
     name: Publish Deploy Repo
-    if: ${{ github.actor != 'github-actions[bot]' }}
+    if: ${{ github.actor != 'github-actions[bot]' && (inputs.deploy_target == 'limbo' || inputs.deploy_target == 'both') }}
     runs-on: ubuntu-latest
     env:
       MBMS_TOKEN: ${{ secrets.MBMS_TOKEN }}
@@ -287,6 +292,10 @@ jobs:
           set -e
           if [ "${{ inputs.channel }}" != "stable" ] && [ "${{ inputs.channel }}" != "test" ]; then
             echo "channel must be stable or test." >&2
+            exit 1
+          fi
+          if [ "${{ inputs.deploy_target }}" != "limbo" ] && [ "${{ inputs.deploy_target }}" != "mbms" ] && [ "${{ inputs.deploy_target }}" != "both" ]; then
+            echo "deploy_target must be limbo, mbms, or both." >&2
             exit 1
           fi
       - name: Guard expected VERSION
@@ -429,12 +438,177 @@ jobs:
 
           gh release upload "$TAG" -R HVR88/Limbo "../${DEPLOY_ZIP_NAME}" --clobber
 
+  publish-deploy-mbms:
+    name: Publish Deploy Repo (MusicBrainz-MBMS)
+    if: ${{ github.actor != 'github-actions[bot]' && (inputs.deploy_target == 'mbms' || inputs.deploy_target == 'both') }}
+    runs-on: ubuntu-latest
+    env:
+      MBMS_TOKEN: ${{ secrets.MBMS_TOKEN }}
+      DEPLOY_BRANCH: ${{ inputs.channel == 'test' && 'test' || 'main' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate channel input
+        run: |
+          set -e
+          if [ "${{ inputs.channel }}" != "stable" ] && [ "${{ inputs.channel }}" != "test" ]; then
+            echo "channel must be stable or test." >&2
+            exit 1
+          fi
+          if [ "${{ inputs.deploy_target }}" != "limbo" ] && [ "${{ inputs.deploy_target }}" != "mbms" ] && [ "${{ inputs.deploy_target }}" != "both" ]; then
+            echo "deploy_target must be limbo, mbms, or both." >&2
+            exit 1
+          fi
+      - name: Guard expected VERSION
+        run: |
+          set -e
+          ACTUAL_VERSION=$(cat VERSION)
+          if [ "$ACTUAL_VERSION" != "${{ inputs.expected_version }}" ]; then
+            echo "VERSION mismatch: expected '${{ inputs.expected_version }}' but found '${ACTUAL_VERSION}'." >&2
+            exit 1
+          fi
+
+      - name: Load deploy vars
+      # shellcheck disable=SC1091
+        run: |
+          set -e
+          CHANNEL="${{ inputs.channel }}"
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          import os
+          import re
+          from pathlib import Path
+
+          version = Path("VERSION").read_text().strip()
+          m = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)(?:\.(\d{1,3}))?", version)
+          if not m:
+            raise SystemExit(f"VERSION format invalid: {version!r}")
+          major, minor, release, build_str = m.groups()
+          build_str = build_str or "0"
+          version_full = f"{major}.{minor}.{release}.{build_str}"
+          release_version_3 = f"{major}.{minor}.{release}"
+          channel = os.environ.get("CHANNEL", "stable")
+          if channel == "test":
+            tag_version = f"{major}.{minor}.{release}.{build_str}"
+            release_version = tag_version
+          else:
+            tag_version = release_version_3
+            release_version = release_version_3
+          print(f"MBMS_TAG_VERSION={tag_version}")
+          print(f"MBMS_VERSION_FULL={version_full}")
+          print(f"RELEASE_VERSION={release_version}")
+          PY
+
+      - name: Checkout deploy repo
+        uses: actions/checkout@v4
+        with:
+          repository: HVR88/MusicBrainz-MBMS
+          token: ${{ secrets.MBMS_TOKEN }}
+          ref: ${{ env.DEPLOY_BRANCH }}
+          path: deploy
+
+      - name: Stage deploy files
+        run: |
+          set -e
+          rm -rf deploy-out
+          mkdir -p deploy-out
+
+          cp deploy-assets/docker-compose.mbms.yml deploy-out/docker-compose.yml
+          cp deploy-assets/README.mbms.md deploy-out/README.md
+          cp deploy-assets/example.mbms.env deploy-out/example.env
+          echo "$MBMS_VERSION_FULL" > deploy-out/VERSION
+
+          python3 - <<'PY'
+          from __future__ import annotations
+
+          import os
+          from pathlib import Path
+
+          env_path = Path("deploy-out/example.env")
+          text = env_path.read_text()
+          lines = text.splitlines()
+
+          def upsert(lines: list[str], key: str, value: str) -> list[str]:
+            out: list[str] = []
+            found = False
+            prefix = f"{key}="
+            for line in lines:
+              if line.startswith(prefix):
+                out.append(prefix + value)
+                found = True
+              else:
+                out.append(line)
+            if not found:
+              out.append(prefix + value)
+            return out
+
+          lines = upsert(lines, "MBMS_DOCKERHUB_NAMESPACE", "espressomatic")
+          lines = upsert(lines, "MBMS_DOCKERHUB_REPO_PREFIX", "limbo")
+
+          env_path.write_text("\n".join(lines).rstrip() + "\n")
+          PY
+
+      - name: Sync deploy repo
+        run: |
+          set -e
+          rsync -a --delete --exclude .git deploy-out/ deploy/
+
+      - name: Create release zip
+        if: ${{ inputs.channel == 'stable' }}
+        run: |
+          set -e
+          ZIP_NAME="musicbrainz-mbms-${RELEASE_VERSION}.zip"
+          rm -f "$ZIP_NAME"
+          (cd deploy-out && zip -r "../$ZIP_NAME" .)
+          echo "DEPLOY_ZIP_NAME=$ZIP_NAME" >> "$GITHUB_ENV"
+
+      - name: Commit and push
+        working-directory: deploy
+        run: |
+          set -e
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No deploy changes to publish."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "Publish deploy files from ${GITHUB_REPOSITORY}@${GITHUB_SHA}"
+            git push origin "${DEPLOY_BRANCH}"
+          fi
+
+      - name: Tag and release deploy repo
+        working-directory: deploy
+        if: ${{ inputs.channel == 'stable' }}
+        env:
+          GH_TOKEN: ${{ secrets.MBMS_TOKEN }}
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          TAG="v${RELEASE_VERSION}"
+          echo "TAG_VERSION=$TAG" >> "$GITHUB_ENV"
+
+          git fetch --tags
+          if ! git rev-parse "$TAG" >/dev/null 2>&1; then
+            git tag -a "$TAG" -m "MusicBrainz-MBMS ${RELEASE_VERSION}"
+            git push origin "$TAG"
+          fi
+
+          if ! gh release view "$TAG" -R HVR88/MusicBrainz-MBMS >/dev/null 2>&1; then
+            gh release create "$TAG" -R HVR88/MusicBrainz-MBMS -t "MusicBrainz-MBMS" -n "Automated release."
+          fi
+
+          gh release upload "$TAG" -R HVR88/MusicBrainz-MBMS "../${DEPLOY_ZIP_NAME}" --clobber
+
   release:
     name: Tag Release and Bump Minor
     needs:
       - publish-dockerhub
       - publish-deploy
-    if: ${{ github.actor != 'github-actions[bot]' && needs.publish-dockerhub.result == 'success' && needs.publish-deploy.result == 'success' }}
+      - publish-deploy-mbms
+    if: >-
+      ${{ github.actor != 'github-actions[bot]'
+          && needs.publish-dockerhub.result == 'success'
+          && needs.publish-deploy.result != 'failure'
+          && needs.publish-deploy-mbms.result != 'failure' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write

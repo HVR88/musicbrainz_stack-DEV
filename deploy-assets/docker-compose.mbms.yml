@@ -1,0 +1,280 @@
+# Description: Deploy compose file with managed assets sync
+
+x-require-env: ${MUSICBRAINZ_REPLICATION_TOKEN}
+x-require-env-guard: ${MUSICBRAINZ_REPLICATION_TOKEN:?You need to set MUSICBRAINZ_REPLICATION_TOKEN in .env before starting.}
+
+x-assets-depends: &assets_depends
+  assets:
+    condition: service_completed_successfully
+
+volumes:
+  mqdata:
+    driver: local
+  pgdata:
+    driver: local
+  solrdata:
+    driver: local
+  dbdump:
+    driver: local
+  solrdump:
+    driver: local
+services:
+  assets:
+    profiles: ["${COMPOSE_PROFILES:-mbms}"]
+    image: ${MBMS_DOCKERHUB_NAMESPACE:-espressomatic}/${MBMS_DOCKERHUB_REPO_PREFIX:-limbo}-assets:latest
+    pull_policy: always
+    volumes:
+      - ./:/out
+    restart: "no"
+
+  preflight:
+    image: alpine:3.20
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if [ -z "${MUSICBRAINZ_REPLICATION_TOKEN:-}" ]; then
+          echo "Missing MUSICBRAINZ_REPLICATION_TOKEN. Set it in .env before running docker compose up." >&2
+          exit 1
+        fi
+        echo "OK: replication token check passed."
+    env_file:
+      - ./.env
+    restart: "no"
+    depends_on:
+      <<: *assets_depends
+
+  db:
+    profiles: ["${COMPOSE_PROFILES:-mbms}"]
+    image: ${MBMS_DOCKERHUB_NAMESPACE:-espressomatic}/${MBMS_DOCKERHUB_REPO_PREFIX:-limbo}-db:latest
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
+    restart: unless-stopped
+    command: postgres -c "shared_buffers=${POSTGRES_SHARED_BUFFERS:-4GB}" -c "shared_preload_libraries=pg_amqp.so"
+    environment:
+      - TZ=${TZ:-America/Toronto}
+      - POSTGRES_USER=${MB_DB_USER:-musicbrainz}
+      - POSTGRES_PASSWORD=${MB_DB_PASSWORD:-musicbrainz}
+    shm_size: "${POSTGRES_SHM_SIZE:-4GB}"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    depends_on:
+      <<: *assets_depends
+
+  mq:
+    profiles: ["${COMPOSE_PROFILES:-mbms}"]
+    image: ${MBMS_DOCKERHUB_NAMESPACE:-espressomatic}/${MBMS_DOCKERHUB_REPO_PREFIX:-limbo}-mq:latest
+    hostname: "mq"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
+    environment:
+      - TZ=${TZ:-America/Toronto}
+    restart: unless-stopped
+    ulimits:
+      nofile: 65536
+    volumes:
+      - mqdata:/var/lib/rabbitmq
+    expose:
+      - "5672"
+    depends_on:
+      <<: *assets_depends
+
+  redis:
+    profiles: ["${COMPOSE_PROFILES:-mbms}"]
+    image: redis:3-alpine
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
+    environment:
+      - TZ=${TZ:-America/Toronto}
+    restart: unless-stopped
+    expose:
+      - "6379"
+    depends_on:
+      <<: *assets_depends
+
+  bootstrap:
+    profiles: ["${COMPOSE_PROFILES:-mbms}"]
+    image: ${MBMS_DOCKERHUB_NAMESPACE:-espressomatic}/${MBMS_DOCKERHUB_REPO_PREFIX:-limbo}-bootstrap:latest
+    environment:
+      - TZ=${TZ:-America/Toronto}
+      - POSTGRES_USER=${MB_DB_USER:-musicbrainz}
+      - POSTGRES_PASSWORD=${MB_DB_PASSWORD:-musicbrainz}
+      - MUSICBRAINZ_BOOTSTRAP_DB=${MUSICBRAINZ_BOOTSTRAP_DB:-1}
+      - MUSICBRAINZ_BOOTSTRAP_FETCH_DUMPS=${MUSICBRAINZ_BOOTSTRAP_FETCH_DUMPS:-1}
+      - MUSICBRAINZ_BOOTSTRAP_MATERIALIZED=${MUSICBRAINZ_BOOTSTRAP_MATERIALIZED:-1}
+      - MUSICBRAINZ_BOOTSTRAP_WGET_OPTIONS=${MUSICBRAINZ_BOOTSTRAP_WGET_OPTIONS:-}
+      - MUSICBRAINZ_BOOTSTRAP_DB_MARKER=${MUSICBRAINZ_BOOTSTRAP_DB_MARKER:-/media/dbdump/.bootstrap.db.done}
+      - MUSICBRAINZ_BOOTSTRAP_MATERIALIZED_MARKER=${MUSICBRAINZ_BOOTSTRAP_MATERIALIZED_MARKER:-/media/dbdump/.bootstrap.materialized.done}
+      - MUSICBRAINZ_BOOTSTRAP_MARKER=${MUSICBRAINZ_BOOTSTRAP_MARKER:-/media/dbdump/.bootstrap.done}
+    volumes:
+      - dbdump:/media/dbdump
+    command: ["bootstrap.sh"]
+    restart: "no"
+    depends_on:
+      <<: *assets_depends
+      preflight:
+        condition: service_completed_successfully
+      db:
+        condition: service_started
+
+  search-bootstrap:
+    profiles: ["${COMPOSE_PROFILES:-mbms}"]
+    image: ${MBMS_DOCKERHUB_NAMESPACE:-espressomatic}/${MBMS_DOCKERHUB_REPO_PREFIX:-limbo}-search:latest
+    entrypoint: ["/usr/local/bin/bootstrap-indexes.sh"]
+    environment:
+      - TZ=${TZ:-America/Toronto}
+      - MUSICBRAINZ_BOOTSTRAP_SEARCH_INDEXES=${MUSICBRAINZ_BOOTSTRAP_SEARCH_INDEXES:-download}
+      - MUSICBRAINZ_BOOTSTRAP_WAIT_FOR_DB=${MUSICBRAINZ_BOOTSTRAP_WAIT_FOR_DB:-1}
+      - MUSICBRAINZ_BOOTSTRAP_DB_MARKER=${MUSICBRAINZ_BOOTSTRAP_DB_MARKER:-/media/dbdump/.bootstrap.db.done}
+      - MUSICBRAINZ_BOOTSTRAP_SEARCH_MARKER=${MUSICBRAINZ_BOOTSTRAP_SEARCH_MARKER:-/var/cache/musicbrainz/solr-backups/.bootstrap.solr.done}
+      - MUSICBRAINZ_BOOTSTRAP_SOLR_CLEANUP=${MUSICBRAINZ_BOOTSTRAP_SOLR_CLEANUP:-0}
+      - SOLR_HEAP=${SOLR_HEAP:-4g}
+    volumes:
+      - solrdata:/var/solr
+      - solrdump:/var/cache/musicbrainz/solr-backups
+      - dbdump:/media/dbdump:ro
+    ulimits:
+      nofile: 65536
+    restart: "no"
+    depends_on:
+      <<: *assets_depends
+      preflight:
+        condition: service_completed_successfully
+      bootstrap:
+        condition: service_completed_successfully
+
+  search:
+    profiles: ["${COMPOSE_PROFILES:-mbms}"]
+    image: ${MBMS_DOCKERHUB_NAMESPACE:-espressomatic}/${MBMS_DOCKERHUB_REPO_PREFIX:-limbo}-search:latest
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
+    ulimits:
+      nofile: 65536
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-America/Toronto}
+      - SOLR_HEAP=${SOLR_HEAP:-4g}
+      - LOG4J_FORMAT_MSG_NO_LOOKUPS=true
+    mem_swappiness: 1
+    expose:
+      - "8983"
+    volumes:
+      - dbdump:/media/dbdump:ro
+      - solrdata:/var/solr
+      - solrdump:/var/cache/musicbrainz/solr-backups
+    depends_on:
+      <<: *assets_depends
+      search-bootstrap:
+        condition: service_completed_successfully
+
+  musicbrainz:
+    profiles: ["${COMPOSE_PROFILES:-mbms}"]
+    image: ${MBMS_DOCKERHUB_NAMESPACE:-espressomatic}/${MBMS_DOCKERHUB_REPO_PREFIX:-limbo}-musicbrainz:latest
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "50"
+    ports:
+      - "${MUSICBRAINZ_DOCKER_HOST_IPADDRCOL:-}${MUSICBRAINZ_WEB_SERVER_PORT:-5000}:5000"
+    volumes:
+      - dbdump:/media/dbdump
+      - solrdump:/var/cache/musicbrainz/solr-backups:ro
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ:-America/Toronto}
+      - POSTGRES_USER=${MB_DB_USER:-musicbrainz}
+      - POSTGRES_PASSWORD=${MB_DB_PASSWORD:-musicbrainz}
+      - MUSICBRAINZ_BASE_FTP_URL=${MUSICBRAINZ_BASE_FTP_URL:-}
+      - MUSICBRAINZ_BASE_DOWNLOAD_URL=${MUSICBRAINZ_BASE_DOWNLOAD_URL:-https://data.metabrainz.org/pub/musicbrainz}
+      - MUSICBRAINZ_CAA_BASE_URL=${MUSICBRAINZ_CAA_BASE_URL:-}
+      - MUSICBRAINZ_SERVER_PROCESSES=${MUSICBRAINZ_SERVER_PROCESSES:-10}
+      - STATIC_RESOURCES_LOCATION=${STATIC_RESOURCES_LOCATION:-/static/build}
+      - MUSICBRAINZ_REPLICATION_ENABLED=${MUSICBRAINZ_REPLICATION_ENABLED:-0}
+      - MUSICBRAINZ_REPLICATION_TIME=${MUSICBRAINZ_REPLICATION_TIME:-03:00}
+      - MUSICBRAINZ_REPLICATION_SCHEDULE=${MUSICBRAINZ_REPLICATION_SCHEDULE:-}
+      - MUSICBRAINZ_REPLICATION_TOKEN=${MUSICBRAINZ_REPLICATION_TOKEN:-}
+      - MBMS_ADMIN_ENABLED=${MBMS_ADMIN_ENABLED:-0}
+      - MBMS_ADMIN_KEY=${MBMS_ADMIN_KEY:-}
+      - MBMS_ADMIN_HOST=${MBMS_ADMIN_HOST:-0.0.0.0}
+      - MBMS_ADMIN_PORT=${MBMS_ADMIN_PORT:-8099}
+      - MBMS_ADMIN_HEADER=${MBMS_ADMIN_HEADER:-X-MBMS-Key}
+      - MBMS_ADMIN_NOTIFY_TIMEOUT=${MBMS_ADMIN_NOTIFY_TIMEOUT:-5}
+      - MBMS_ADMIN_LOCK=${MBMS_ADMIN_LOCK:-/tmp/replication.pid}
+      - MBMS_ADMIN_REPL_SCRIPT=${MBMS_ADMIN_REPL_SCRIPT:-/usr/local/bin/replication.sh}
+      - MUSICBRAINZ_USE_PROXY=1
+      - MUSICBRAINZ_WEB_SERVER_HOST=${MUSICBRAINZ_WEB_SERVER_HOST:-localhost}
+      - MUSICBRAINZ_WEB_SERVER_PORT=${MUSICBRAINZ_WEB_SERVER_PORT:-5000}
+    depends_on:
+      <<: *assets_depends
+      preflight:
+        condition: service_completed_successfully
+      db:
+        condition: service_started
+      mq:
+        condition: service_started
+      search:
+        condition: service_started
+      redis:
+        condition: service_started
+      bootstrap:
+        condition: service_completed_successfully
+      search-bootstrap:
+        condition: service_completed_successfully
+
+  indexer:
+    profiles: ["${COMPOSE_PROFILES:-mbms}"]
+    image: ${MBMS_DOCKERHUB_NAMESPACE:-espressomatic}/${MBMS_DOCKERHUB_REPO_PREFIX:-limbo}-indexer:latest
+    environment:
+      - TZ=${TZ:-America/Toronto}
+      - POSTGRES_USER=${MB_DB_USER:-musicbrainz}
+      - POSTGRES_PASSWORD=${MB_DB_PASSWORD:-musicbrainz}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
+    depends_on:
+      <<: *assets_depends
+      db:
+        condition: service_started
+      mq:
+        condition: service_started
+      search:
+        condition: service_started
+
+  indexer-cron:
+    profiles: ["${COMPOSE_PROFILES:-mbms}"]
+    image: ${MBMS_DOCKERHUB_NAMESPACE:-espressomatic}/${MBMS_DOCKERHUB_REPO_PREFIX:-limbo}-indexer:latest
+    environment:
+      - TZ=${TZ:-America/Toronto}
+      - POSTGRES_USER=${MB_DB_USER:-musicbrainz}
+      - POSTGRES_PASSWORD=${MB_DB_PASSWORD:-musicbrainz}
+      - MUSICBRAINZ_INDEXING_ENABLED=${MUSICBRAINZ_INDEXING_ENABLED:-0}
+      - MUSICBRAINZ_INDEXING_TIME=${MUSICBRAINZ_INDEXING_TIME:-01:00}
+      - MUSICBRAINZ_INDEXING_DAY=${MUSICBRAINZ_INDEXING_DAY:-Sunday}
+      - MUSICBRAINZ_INDEXING_FREQUENCY=${MUSICBRAINZ_INDEXING_FREQUENCY:-weekly}
+      - MUSICBRAINZ_BOOTSTRAP_DB_MARKER=${MUSICBRAINZ_BOOTSTRAP_DB_MARKER:-/media/dbdump/.bootstrap.db.done}
+    volumes:
+      - dbdump:/media/dbdump:ro
+    command: ["/usr/local/bin/indexer-cron.sh"]
+    restart: unless-stopped
+    depends_on:
+      <<: *assets_depends
+      db:
+        condition: service_started
+      search:
+        condition: service_started
