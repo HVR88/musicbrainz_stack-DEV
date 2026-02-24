@@ -102,8 +102,8 @@ If you previously cloned the old deploy repo, update your git remote once:
 1. `git remote set-url origin https://github.com/HVR88/MusicBrainz-MBMS`
 2. `git pull`
 
-If you were using zip downloads, update your `.env` and `docker-compose.yml`
-from the new repo release assets.
+If you were using zip downloads, replace your `docker-compose.yml` and
+`example.env` with the new release assets, then re-apply your `.env` settings.
 
 ## Migration note (volume prefix and upgrade)
 
@@ -117,9 +117,13 @@ You have two options:
 1. **Keep using existing `mbms_plus_*` volumes (no migration)**
    - Keep the folder name as `mbms_plus`, **or**
    - Set `COMPOSE_PROJECT_NAME=mbms_plus` in `.env`.
+   - Replace `docker-compose.yml` and `example.env` with the new release assets
+     (image names changed to `limbo-*`), then re-apply your `.env` values.
 
 2. **Migrate to new `limbo_*` volumes (recommended for new layout)**
    - Set `COMPOSE_PROJECT_NAME=limbo` in `.env`.
+   - Replace `docker-compose.yml` and `example.env` with the new release assets
+     (image names changed to `limbo-*`), then re-apply your `.env` values.
    - Run the migration script:
      ```bash
      admin/upgrade-volumes
