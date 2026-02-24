@@ -398,9 +398,12 @@ jobs:
         run: |
           set -e
           ZIP_NAME="limbo-${RELEASE_VERSION}.zip"
-          rm -f "$ZIP_NAME"
+          LATEST_ZIP_NAME="limbo-latest.zip"
+          rm -f "$ZIP_NAME" "$LATEST_ZIP_NAME"
           (cd deploy-out && zip -r "../$ZIP_NAME" .)
+          cp "$ZIP_NAME" "$LATEST_ZIP_NAME"
           echo "DEPLOY_ZIP_NAME=$ZIP_NAME" >> "$GITHUB_ENV"
+          echo "DEPLOY_LATEST_ZIP_NAME=$LATEST_ZIP_NAME" >> "$GITHUB_ENV"
 
       - name: Commit and push
         working-directory: deploy
@@ -439,6 +442,7 @@ jobs:
           fi
 
           gh release upload "$TAG" -R HVR88/Limbo "../${DEPLOY_ZIP_NAME}" --clobber
+          gh release upload "$TAG" -R HVR88/Limbo "../${DEPLOY_LATEST_ZIP_NAME}" --clobber
 
   publish-deploy-mbms:
     name: Publish Deploy Repo (MusicBrainz-MBMS)
@@ -558,9 +562,12 @@ jobs:
         run: |
           set -e
           ZIP_NAME="musicbrainz-mbms-${RELEASE_VERSION}.zip"
-          rm -f "$ZIP_NAME"
+          LATEST_ZIP_NAME="musicbrainz-mbms-latest.zip"
+          rm -f "$ZIP_NAME" "$LATEST_ZIP_NAME"
           (cd deploy-out && zip -r "../$ZIP_NAME" .)
+          cp "$ZIP_NAME" "$LATEST_ZIP_NAME"
           echo "DEPLOY_ZIP_NAME=$ZIP_NAME" >> "$GITHUB_ENV"
+          echo "DEPLOY_LATEST_ZIP_NAME=$LATEST_ZIP_NAME" >> "$GITHUB_ENV"
 
       - name: Commit and push
         working-directory: deploy
@@ -599,6 +606,7 @@ jobs:
           fi
 
           gh release upload "$TAG" -R HVR88/MusicBrainz-MBMS "../${DEPLOY_ZIP_NAME}" --clobber
+          gh release upload "$TAG" -R HVR88/MusicBrainz-MBMS "../${DEPLOY_LATEST_ZIP_NAME}" --clobber
 
   release:
     name: Tag Release and Bump Minor
