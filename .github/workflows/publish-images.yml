@@ -134,9 +134,11 @@ jobs:
           m = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)\.(\d{1,3})", version)
           if not m:
             raise SystemExit(f"VERSION format invalid: {version!r}")
-          major, minor, release, _build = m.groups()
+          major, minor, release, build_str = m.groups()
           tag = f"{major}.{minor}.{release}"
+          full_version = f"{major}.{minor}.{release}.{build_str}"
           print(f"DOCKER_TAG_VERSION={tag}")
+          print(f"MBMS_VERSION_FULL={full_version}")
           PY
 
           echo "POSTGRES_VERSION=$POSTGRES_VERSION" >> "$GITHUB_ENV"
@@ -223,6 +225,8 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: ${{ env.TAGS }}
+          labels: |
+            org.opencontainers.image.version=${{ env.MBMS_VERSION_FULL }}
           build-args: ${{ env.BUILD_ARGS }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -325,7 +329,7 @@ jobs:
           version_full = f"{major}.{minor}.{release}.{build_str}"
           release_version_3 = f"{major}.{minor}.{release}"
           build_int = int(build_str)
-          tag_version = release_version_3
+          tag_version = version_full
           release_version = release_version_3 if build_int == 0 else f"{major}.{minor}.{release}.{build_str}"
           print(f"MBMS_TAG_VERSION={tag_version}")
           print(f"MBMS_VERSION_FULL={version_full}")
@@ -486,7 +490,7 @@ jobs:
           version_full = f"{major}.{minor}.{release}.{build_str}"
           release_version_3 = f"{major}.{minor}.{release}"
           build_int = int(build_str)
-          tag_version = release_version_3
+          tag_version = version_full
           release_version = release_version_3 if build_int == 0 else f"{major}.{minor}.{release}.{build_str}"
           print(f"MBMS_TAG_VERSION={tag_version}")
           print(f"MBMS_VERSION_FULL={version_full}")
