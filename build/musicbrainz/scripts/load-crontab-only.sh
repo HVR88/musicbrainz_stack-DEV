@@ -37,6 +37,7 @@ if is_true "${MUSICBRAINZ_REPLICATION_ENABLED:-0}"; then
     cat > /crons.conf <<EOF
 SHELL=/bin/bash
 BASH_ENV=/noninteractive.bash_env
+CRON_TZ=${TZ:-America/Toronto}
 ${schedule} /usr/local/bin/replication.sh
 EOF
     crontab /crons.conf
